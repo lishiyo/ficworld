@@ -6,12 +6,13 @@ import os
 from typing import Dict, List, Any, Optional, Union
 import httpx
 from dotenv import load_dotenv
+from .ficworld_config import LLM_MODEL_NAME
 
 
 class LLMInterface:
     """Interface for interacting with language models."""
     
-    def __init__(self, model_name: str = "deepseek/deepseek-r1:free"):
+    def __init__(self, model_name: str = LLM_MODEL_NAME):
         """
         Initialize the LLM interface.
         

@@ -178,20 +178,20 @@ This document breaks down the FicWorld project into manageable subtasks, providi
 
 ### Subtask 5.1: Define `Narrator` Class
 - **Instructions:**
-    - [ ] Create `modules/narrator.py`.
-    - [ ] Define `Narrator` class.
-    - [ ] Constructor `__init__(self, llm_interface)`: Stores `llm_interface`.
-    - [ ] Write unit tests for `Narrator.__init__` to verify dependency storage.
+    - [x] Create `modules/narrator.py`.
+    - [x] Define `Narrator` class.
+    - [x] Constructor `__init__(self, llm_interface)`: Stores `llm_interface`.
+    - [x] Write unit tests for `Narrator.__init__` to verify dependency storage.
 
 ### Subtask 5.2: Implement `render()` Method
 - **Instructions:**
-    - [ ] Define `render(self, scene_log, pov_character_name, pov_character_info)` method.
-    - [ ] Prepare `NARRATOR_SYSTEM` and `NARRATOR_USER` prompts.
-        - [ ] `NARRATOR_USER` will include the `scene_log` (list of factual outcomes), `pov_character_name`, and `pov_character_info` (persona, goals, mood).
-    - [ ] Call `llm_interface.generate_response()`.
-    - [ ] Return the generated prose string.
-    - [ ] Implement error handling.
-    - [ ] Write unit tests for `render()` (mocking `llm_interface`) to verify correct prompt preparation (system and user with scene log and POV info) and LLM call. Test error handling.
+    - [x] Define `render(self, scene_log, pov_character_name, pov_character_info)` method.
+    - [x] Prepare `NARRATOR_SYSTEM` and `NARRATOR_USER` prompts.
+        - [x] `NARRATOR_USER` will include the `scene_log` (list of factual outcomes), `pov_character_name`, and `pov_character_info` (persona, goals, mood).
+    - [x] Call `llm_interface.generate_response()` (now `generate_response_sync`).
+    - [x] Return the generated prose string.
+    - [x] Implement error handling.
+    - [x] Write unit tests for `render()` (mocking `llm_interface`) to verify correct prompt preparation (system and user with scene log and POV info) and LLM call. Test error handling.
 
 ---
 

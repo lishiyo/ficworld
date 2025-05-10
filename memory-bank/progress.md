@@ -1,6 +1,6 @@
 # Progress
 
-Date: Fri May 10 00:20:00 PDT 2025
+Date: Fri May 10 00:25:00 PDT 2025
 
 ## Changes Since Last Update
 - **World Agent Implementation (Phase 4 Completed):**
@@ -18,6 +18,16 @@ Date: Fri May 10 00:20:00 PDT 2025
   - Corrected `CharacterState` attribute access from dictionary-style to dot notation throughout `WorldAgent`.
   - Updated `tests/test_world_agent.py` to reflect LLM-driven logic, configurable parameters, and fixed `CharacterState` access. All tests are passing.
   - Addressed an `AttributeError` in `generate_event` related to `current_beat` handling.
+- **Narrator Module Implementation (Phase 5 Completed):**
+  - Implemented `Narrator` class in `modules/narrator.py`.
+  - Developed the `render()` method to convert scene logs into narrative prose using LLM calls, adhering to `prompt_design.md` for `NARRATOR_SYSTEM` and `NARRATOR_USER` prompts.
+  - Ensured `render()` uses the synchronous `llm_interface.generate_response_sync()` to prevent unawaited coroutine issues.
+  - Created comprehensive unit tests in `tests/test_narrator.py` covering initialization, successful narration, various LLM response formats, and error handling.
+- **Configuration Enhancements:**
+  - Created `modules/ficworld_config.py` to store global default settings.
+  - Made `LLM_MODEL_NAME` in `LLMInterface` configurable via `ficworld_config.py`.
+  - Made `DEFAULT_NARRATOR_LITERARY_TONE` and `DEFAULT_NARRATOR_TENSE_INSTRUCTIONS` in `Narrator` configurable via `ficworld_config.py`.
+  - Updated unit tests for `Narrator` to use and verify against these configurable defaults.
 
 ## Errors Encountered and Learnings
 - **Dataclass Attribute Access:** Reinforced learning about correct attribute access (dot notation) for dataclass instances nested within other data structures, resolving multiple `AttributeError` and `TypeError` instances in `WorldAgent` and its tests.
@@ -25,13 +35,17 @@ Date: Fri May 10 00:20:00 PDT 2025
 - **LLM-Driven Logic Trade-offs:** Transitioning `WorldAgent` to be heavily LLM-driven greatly enhances flexibility and emergent possibilities. However, it necessitates meticulous prompt engineering, robust error/fallback handling, and careful management of context provided to the LLMs. Parsing LLM outputs (especially for structured data like in `update_from_outcome`) also requires careful design.
 - **Configuration for Fine-Tuning:** Making simulation parameters (e.g., scene length, event frequency) in `WorldAgent` configurable is crucial for allowing users or developers to fine-tune the narrative generation process without code changes.
 - **Async Test Warnings:** Noted `RuntimeWarning` and `DeprecationWarning` for `async` test methods in `test_character_agent.py`. This will need to be addressed by potentially using an async-compatible test runner or framework adjustments for those specific tests.
+- **Async/Sync LLM Calls in Synchronous Methods:** Encountered `RuntimeWarning: coroutine ... was never awaited` and subsequent test failures when the synchronous `Narrator.render()` method called an asynchronous method (`generate_response`) of the `LLMInterface`.
+- **Learning:** Reinforced the necessity of using synchronous wrappers (e.g., `generate_response_sync`) or appropriately managing async event loops when calling asynchronous code from synchronous contexts. This is crucial for both correct runtime behavior and testability.
+- **Testing with Configurable Defaults:** When making components use configurable default values, unit tests should also be updated to reference these defaults. This ensures tests are validating against the actual behavior determined by the configuration, making them more robust to changes in default settings.
 
 ## Next Steps Planned
-- **Phase 5: Narrator Module Implementation:**
-  - Define `Narrator` class in `modules/narrator.py`.
-  - Implement the `render()` method to take a scene log and POV character information, and use an LLM with `NARRATOR_SYSTEM` and `NARRATOR_USER` prompts to generate narrative prose.
-  - Write unit tests for the `Narrator` class.
-- Address `async` test warnings in `test_character_agent.py`.
+- **Phase 6: Simulation Loop Orchestration (`main.py`):**
+  - Instantiate all core components (`ConfigLoader`, `LLMInterface`, `MemoryManager`, `WorldAgent`, `CharacterAgent`s, `Narrator`).
+  - Implement the main simulation loop as detailed in `systemPatterns.md`, managing scenes, turns, agent actions, memory updates, and narration.
+  - Output the final story to `outputs/<preset_name>/story.md` and optionally `simulation_log.jsonl`.
+  - Develop initial integration tests for the main loop.
+- Address any remaining `async` test warnings in `test_character_agent.py`.
 
 ---
 # Progress
@@ -92,50 +106,4 @@ Date: Fri May  9 22:11:12 PDT 2025
 
 ## Next Steps Planned
 - **Phase 3: Character Agent Implementation:**
-  - Define `CharacterAgent` class in `modules/character_agent.py`
-  - Implement the `__init__` method to store persona, goals, mood, and references to `LLMInterface` and `MemoryManager`
-  - Implement the `reflect()` method to process world state and memories, update mood, and generate internal thoughts using the `CHARACTER_REFLECT` prompt
-  - Implement the `plan()` method to generate a structured JSON action plan using the `CHARACTER_PLAN` prompt, influenced by mood and internal reflection
-  - Create unit tests for the `CharacterAgent` class in `tests/test_character_agent.py`
-
----
-
-Date: Fri May  9 21:29:44 PDT 2025
-
-## Changes Since Last Update
-- **Core Project Setup (Phase 1 Complete):**
-    - Created `requirements.txt` with initial dependencies.
-    - Created `README.md` with setup and usage instructions.
-    - Defined core data structures (e.g., `MoodVector`, `RoleArchetype`, `WorldDefinition`, `Preset`, `MemoryEntry`, `LogEntry`) as Python dataclasses in `modules/models.py`.
-    - Implemented `ConfigLoader` in `modules/config_loader.py` capable of loading presets, world definitions, and role archetypes from JSON files.
-    - Created initial `main.py` with command-line argument parsing (for `--preset`) and logic to use `ConfigLoader` to load and display configurations.
-    - Added `modules/__init__.py` to make `modules` a Python package.
-    - Created sample data files:
-        - World: `data/worlds/haunted_forest.json`
-        - Roles: `data/roles/scholar.json`, `data/roles/knight.json`, `data/roles/mystic.json`
-        - Preset: `presets/demo_forest_run.json`
-    - Created sample prompt templates:
-        - `data/prompts/character_reflect.txt`
-        - `data/prompts/character_plan.txt`
-- **LLM Interface & Basic Memory (Phase 2 Started):**
-    - Implemented `LLMInterface` in `modules/llm_interface.py`, configured to use OpenRouter. This includes methods for generating text and JSON responses, with both async and sync versions.
-    - Implemented an MVP `MemoryManager` in `modules/memory.py` with in-memory lists for short-term (STM) and long-term memory (LTM), and basic scene summarization (concatenation).
-- **API Key Clarification:**
-    - Updated `LLMInterface` and `README.md` (user performed direct edits) to use `OPENROUTER_API_KEY` as the environment variable for the API key, replacing the previous `OPENAI_API_KEY` for better clarity, although the `openai` Python library is still used for the API calls due to OpenRouter's compatibility.
-
-## New Commands or Changes to Commands
-- N/A in this update.
-
-## Errors Encountered and Learnings
-- **Initial API Key Confusion:** Initially, `OPENAI_API_KEY` was used for the OpenRouter service because its API is OpenAI-compatible. This was identified as potentially confusing.
-- **Learning:** It's clearer to use an environment variable name that directly reflects the service being accessed (i.e., `OPENROUTER_API_KEY` for OpenRouter), even if the underlying client library is from a different provider (like `openai`). This improves maintainability and reduces ambiguity for new developers or users setting up the project.
-
-## Next Steps Planned
-- **Phase 3: Character Agent Implementation:**
-    - Define `CharacterAgent` class in `modules/character_agent.py`.
-    - Implement the `__init__` method to store persona, goals, mood, and references to `LLMInterface` and `MemoryManager`.
-    - Implement the `reflect()` method to process world state and memories, update mood, and generate internal thoughts using the `CHARACTER_REFLECT` prompt.
-    - Implement the `plan()` method to generate a structured JSON action plan using the `CHARACTER_PLAN` prompt, influenced by mood and internal reflection.
-
----
-(Previous progress entries would be below this line if they existed)
+  - Define `
