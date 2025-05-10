@@ -1,5 +1,36 @@
 # Progress
 
+Date: Fri May  9 22:11:12 PDT 2025
+
+## Changes Since Last Update
+- **Unit Tests for LLM Interface and Memory Manager (Phase 2 Completed):**
+  - Implemented comprehensive unit tests for `LLMInterface` in `tests/test_llm_interface.py`, covering:
+    - Successful initialization and API key handling
+    - Text and JSON response generation (both async and sync methods)
+    - Error handling for API errors and JSON parsing failures
+    - Heuristic JSON parsing for responses
+  - Implemented comprehensive unit tests for `MemoryManager` in `tests/test_memory.py`, covering:
+    - Initialization and memory store management
+    - Memory creation and storage (LTM and STM)
+    - Memory retrieval (MVP implementation)
+    - Scene summarization (MVP concatenation)
+    - Memory clearing and resetting operations
+  - Fixed a test issue in `test_summarise_scene_mvp` related to newline character representation in expected vs. actual output
+
+## Errors Encountered and Learnings
+- **Newline Character Representation in Tests:** When testing string equality with newline characters, we discovered that using escaped newlines (`\\n`) in the expected string created a mismatch with actual newlines (`\n`) in the output. This is because the escape sequence `\\n` in a string literal becomes a literal backslash followed by 'n' in the actual string, not a newline character.
+- **Learning:** When writing tests involving multi-line strings, be careful with string literal representation, especially for special characters like newlines. Use raw strings (`r"..."`) or actual newline characters as appropriate for expected values.
+
+## Next Steps Planned
+- **Phase 3: Character Agent Implementation:**
+  - Define `CharacterAgent` class in `modules/character_agent.py`
+  - Implement the `__init__` method to store persona, goals, mood, and references to `LLMInterface` and `MemoryManager`
+  - Implement the `reflect()` method to process world state and memories, update mood, and generate internal thoughts using the `CHARACTER_REFLECT` prompt
+  - Implement the `plan()` method to generate a structured JSON action plan using the `CHARACTER_PLAN` prompt, influenced by mood and internal reflection
+  - Create unit tests for the `CharacterAgent` class in `tests/test_character_agent.py`
+
+---
+
 Date: Fri May  9 21:29:44 PDT 2025
 
 ## Changes Since Last Update
