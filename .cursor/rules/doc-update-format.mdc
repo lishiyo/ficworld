@@ -1,0 +1,28 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+**IMPORTANT**: You cannot update [progress.md](mdc:memory-bank/v0/progress.md), [activeContext.md](mdc:memory-bank/v0/activeContext.md), or [tasks.md](mdc:memory-bank/v0/tasks.md) until you verify the task is complete - that means:
+- all tests must be passing 
+- any acceptance criteria must be passing
+- you have reviewed the target architecture in [systemPatterns.md](mdc:memory-bank/v0/systemPatterns.md) and our current architecture has not drifted
+
+If you CAN update these files, follow these instructions:
+- When writing to [progress.md](mdc:memory-bank/v0/progress.md), always use `date` in terminal to verify the current datetime. Append to the top of the file so that the most recent update is at top.
+- When writing to [activeContext.md](mdc:memory-bank/v0/activeContext.md) (our current work focus), also include the `date` but replace the existing content with our updated active context.
+
+What we expect in these files:
+- [progress.md](mdc:memory-bank/v0/progress.md) - our changelog
+   * Changes since the last updates
+   * Any new commands or changes to commands
+   * Errors encountered and learnings from those
+   * Next steps planned 
+- [activeContext.md](mdc:memory-bank/v0/activeContext.md)
+   * Current work focus
+   * What's working
+   * What's broken
+   * Active decisions and considerations, if any
+   * Important patterns and preferences, if any
+   * Learnings and project insights, if any
+   * Current database/model state if relevant
