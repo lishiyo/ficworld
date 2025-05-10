@@ -1,0 +1,11 @@
+{
+  "world_file": "worlds/haunted_forest.json",
+  "role_files": [
+    "roles/knight.json",
+    "roles/scholar.json",
+    "roles/mystic.json"
+  ],
+  "mode": "free",
+  "max_scenes": 5,
+  "llm": "deepseek/deepseek-r1:free"
+} 

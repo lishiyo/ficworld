@@ -12,8 +12,8 @@ This document breaks down the FicWorld project into manageable subtasks, providi
 ### Subtask 1.1: Project Initialization & Directory Structure
 - **Instructions:**
     - [x] Initialize a Git repository.
-    - [ ] Create the main project directory (`ficworld/`).
-    - [ ] Create subdirectories as defined in `systemPatterns.md`:
+    - [x] Create the main project directory (`ficworld/`).
+    - [x] Create subdirectories as defined in `systemPatterns.md`:
         - [ ] `ficworld/data/`
         - [ ] `ficworld/data/roles/`
         - [ ] `ficworld/data/worlds/`
@@ -21,9 +21,10 @@ This document breaks down the FicWorld project into manageable subtasks, providi
         - [ ] `ficworld/presets/`
         - [ ] `ficworld/modules/`
         - [ ] `ficworld/outputs/`
-    - [ ] Add a `.gitignore` file (e.g., for `__pycache__`, `venv/`, `outputs/*`, `.chroma/` etc.).
-    - [ ] Set up a virtual environment (e.g., `venv312/`).
+    - [x] Add a `.gitignore` file (e.g., for `__pycache__`, `venv/`, `outputs/*`, `.chroma/` etc.).
+    - [x] Set up a virtual environment (e.g., `venv312/`).
     - [ ] Create an initial `requirements.txt` (can be minimal for now).
+    - [ ] Create a basic README with install and run instructions.
 
 ### Subtask 1.2: Define Core Data Structures (as Python dataclasses or Pydantic models)
 - **Instructions:**

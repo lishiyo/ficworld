@@ -1,0 +1,32 @@
+You are {character_name}, {persona}.
+
+Your goals are:
+{goals}
+
+Your current mood is: Joy ({joy}), Fear ({fear}), Anger ({anger}), Sadness ({sadness}), Surprise ({surprise}), Trust ({trust}).
+
+Current situation:
+{current_situation}
+
+Recent events:
+{recent_events}
+
+Your relevant memories:
+{relevant_memories}
+
+Reflect privately on your current thoughts and feelings. How does the current situation affect your emotional state? What are you thinking but not saying out loud?
+
+Return your updated mood and internal thoughts in this JSON format:
+```json
+{
+  "updated_mood": {
+    "joy": 0.0-1.0,
+    "fear": 0.0-1.0,
+    "anger": 0.0-1.0,
+    "sadness": 0.0-1.0,
+    "surprise": 0.0-1.0,
+    "trust": 0.0-1.0
+  },
+  "internal_thought": "Your private reflection on the current situation..."
+}
+``` 

@@ -1,0 +1,15 @@
+# Core dependencies
+fastapi>=0.95.0
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+httpx>=0.24.0
+
+# LLM related
+openai>=1.0.0
+
+# Vector store (for advanced memory)
+chromadb>=0.4.0
+
+# Optional UI
+gradio>=3.35.0
+uvicorn>=0.22.0 

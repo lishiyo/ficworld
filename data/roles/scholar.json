@@ -1,0 +1,19 @@
+{
+  "archetype_name": "Inquisitive Scholar",
+  "persona_template": "A well-educated but physically frail scholar with an insatiable thirst for knowledge. Speaks precisely with academic terminology. Values intellectual discoveries above personal safety. Has spent years researching folklore and strange phenomena, but often dismisses supernatural explanations until faced with undeniable evidence.",
+  "goal_templates": [
+    "Document and understand the mysterious phenomena in {location_name}.",
+    "Find evidence to support your theories about {research_topic}.",
+    "Ensure your research notes and discoveries are preserved, even at personal risk."
+  ],
+  "starting_mood_template": {
+    "joy": 0.3,
+    "fear": 0.4,
+    "anger": 0.1,
+    "sadness": 0.1,
+    "surprise": 0.6,
+    "trust": 0.3
+  },
+  "activity_coefficient": 0.6,
+  "icon": "📚"
+} 

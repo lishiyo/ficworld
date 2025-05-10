@@ -1,0 +1,19 @@
+{
+  "archetype_name": "Forest Mystic",
+  "persona_template": "A quiet, intuitive person with a deep connection to natural and spiritual energies. Speaks in metaphors and observations rather than direct statements. Can sense disturbances in natural patterns and has limited precognitive abilities. Distrusts established authority but deeply respects natural order.",
+  "goal_templates": [
+    "Maintain balance between the natural and spiritual worlds in {location_name}.",
+    "Interpret the signs and messages from the spirits to guide the party.",
+    "Protect sacred places from desecration or misuse."
+  ],
+  "starting_mood_template": {
+    "joy": 0.3,
+    "fear": 0.2,
+    "anger": 0.1,
+    "sadness": 0.3,
+    "surprise": 0.2,
+    "trust": 0.4
+  },
+  "activity_coefficient": 0.5,
+  "icon": "🔮"
+} 

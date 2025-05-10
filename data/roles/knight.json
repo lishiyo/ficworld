@@ -1,0 +1,19 @@
+{
+  "archetype_name": "Protective Knight",
+  "persona_template": "A stoic, honorable warrior with unwavering dedication to duty and protecting the innocent. Physically strong and trained in combat, but often struggles with subtle threats or complex moral dilemmas. Values directness and honesty. Somewhat superstitious but reluctant to show fear.",
+  "goal_templates": [
+    "Protect the party members from danger, especially the more vulnerable ones.",
+    "Uphold your sworn oath to {oath_subject}.",
+    "Confront and defeat tangible threats to establish safety."
+  ],
+  "starting_mood_template": {
+    "joy": 0.2,
+    "fear": 0.1,
+    "anger": 0.2,
+    "sadness": 0.1,
+    "surprise": 0.1,
+    "trust": 0.6
+  },
+  "activity_coefficient": 0.8,
+  "icon": "⚔️"
+} 

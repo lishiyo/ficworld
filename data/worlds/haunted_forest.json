@@ -1,0 +1,120 @@
+{
+  "world_name": "The Haunted Forest",
+  "description": "A dense, ancient forest shrouded in mist and whispers. Local legends speak of strange apparitions and lost travelers. The trees grow impossibly tall, their canopies blocking most of the sunlight.",
+  "global_lore": {
+    "magic_system": "Magic is subtle and rare. It manifests primarily through spirits and ancient artifacts, not through practitioners.",
+    "key_factions": [
+      {
+        "name": "Forest Guardians",
+        "details": "Ancient spirits that protect the forest from intruders. They can manipulate the environment and confuse travelers."
+      },
+      {
+        "name": "The Forgotten Order",
+        "details": "A disbanded group of scholars who once studied the forest's mysteries. Their records are scattered and incomplete."
+      }
+    ]
+  },
+  "locations": [
+    {
+      "id": "forest_edge",
+      "name": "Forest Edge",
+      "description": "The boundary between the open lands and the dense forest. The air grows noticeably cooler here, and sounds seem muffled.",
+      "connections": ["old_trail"]
+    },
+    {
+      "id": "old_trail",
+      "name": "Old Trail",
+      "description": "A narrow, overgrown path that winds through the woods. It seems to shift slightly when not directly observed.",
+      "connections": ["forest_edge", "abandoned_cabin", "strange_clearing"]
+    },
+    {
+      "id": "abandoned_cabin",
+      "name": "Abandoned Cabin",
+      "description": "A weathered wooden cabin, its windows dark and door hanging askew. Inside are scattered research materials and personal belongings left in haste.",
+      "connections": ["old_trail"]
+    },
+    {
+      "id": "strange_clearing",
+      "name": "Strange Clearing",
+      "description": "A perfectly circular clearing where no plants grow. Stone monoliths stand at regular intervals around its edge, covered in undecipherable symbols.",
+      "connections": ["old_trail", "ancient_well"]
+    },
+    {
+      "id": "ancient_well",
+      "name": "Ancient Well",
+      "description": "A stone well in a small hollow. Despite its obvious age, the water within is clear and reflects starlight even during the day.",
+      "connections": ["strange_clearing", "heart_of_forest"]
+    },
+    {
+      "id": "heart_of_forest",
+      "name": "Heart of the Forest",
+      "description": "The deepest part of the woods, centered around a massive, gnarled oak tree that seems to pulse with otherworldly energy.",
+      "connections": ["ancient_well"]
+    }
+  ],
+  "script_beats": [
+    {
+      "scene_id": 1,
+      "beat_id": "arrival",
+      "description": "Characters arrive at the forest edge, drawn by rumors or research.",
+      "required_location": "forest_edge"
+    },
+    {
+      "scene_id": 1,
+      "beat_id": "strange_sounds",
+      "description": "As characters proceed down the old trail, they hear whispers and rustling that cannot be explained.",
+      "required_location": "old_trail"
+    },
+    {
+      "scene_id": 2,
+      "beat_id": "discovery",
+      "description": "Characters find the abandoned cabin and scholar's research notes that mention a ritual site.",
+      "required_location": "abandoned_cabin"
+    },
+    {
+      "scene_id": 3,
+      "beat_id": "ritual_site",
+      "description": "The strange clearing is revealed to be an ancient ritual site tied to forest spirits.",
+      "required_location": "strange_clearing"
+    },
+    {
+      "scene_id": 4,
+      "beat_id": "well_reflection",
+      "description": "At the ancient well, characters see reflections of themselves that move independently and offer cryptic warnings.",
+      "required_location": "ancient_well"
+    },
+    {
+      "scene_id": 5,
+      "beat_id": "confrontation",
+      "description": "At the heart of the forest, the nature of the forest's enchantment is revealed, forcing a critical decision.",
+      "required_location": "heart_of_forest"
+    }
+  ],
+  "world_events_pool": [
+    {
+      "event_id": "sudden_fog",
+      "description": "A thick, unnatural fog rolls in, obscuring vision beyond a few feet.",
+      "effects": ["visibility_reduced", "navigation_difficult"]
+    },
+    {
+      "event_id": "spectral_sighting",
+      "description": "A translucent figure is briefly visible between the trees, watching the characters before fading away.",
+      "effects": ["unease_increased", "curiosity_triggered"]
+    },
+    {
+      "event_id": "temporal_shift",
+      "description": "Time seems to skip forward abruptly. The position of the sun changes, and hours have passed in what felt like minutes.",
+      "effects": ["disorientation", "urgency_increased"]
+    },
+    {
+      "event_id": "forest_whispers",
+      "description": "The trees themselves seem to whisper, sharing secrets and warnings that only one character can understand.",
+      "effects": ["knowledge_gained", "party_tension"]
+    },
+    {
+      "event_id": "animal_guide",
+      "description": "A strange woodland creature appears and clearly wants the characters to follow it deeper into the forest.",
+      "effects": ["new_path_revealed", "trust_decision"]
+    }
+  ]
+} 

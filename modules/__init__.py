@@ -1,0 +1,3 @@
+"""
+FicWorld modules package.
+""" 
