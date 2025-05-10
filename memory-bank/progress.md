@@ -1,5 +1,41 @@
 # Progress
 
+Date: Fri May 10 00:20:00 PDT 2025
+
+## Changes Since Last Update
+- **World Agent Implementation (Phase 4 Completed):**
+  - Implemented `WorldAgent` class in `modules/world_agent.py`.
+  - Refactored core `WorldAgent` methods to be primarily LLM-driven for narrative decisions:
+    - `judge_scene_end`: Uses LLM to evaluate scene conclusion based on narrative flow.
+    - `choose_pov_character_for_scene`: Uses LLM to select the most compelling POV character.
+    - `decide_next_actor`: Uses LLM to determine the next acting character based on dramatic potential.
+    - `apply_plan`: Uses LLM to interpret character plans and generate rich textual outcomes.
+    - `should_inject_event`: Uses LLM to decide if an environmental event is narratively appropriate.
+    - `generate_event`: Can use LLM for contextual event generation, alongside script-triggered and random pool events.
+    - `update_from_outcome`: Uses LLM to parse textual outcomes and extract structured state changes (location, conditions, time).
+  - Made `WorldAgent` behavior configurable via `__init__` parameters for thresholds like max scene turns, event injection probabilities, and history limits.
+  - Implemented robust fallback mechanisms for LLM-driven methods in case of API errors.
+  - Corrected `CharacterState` attribute access from dictionary-style to dot notation throughout `WorldAgent`.
+  - Updated `tests/test_world_agent.py` to reflect LLM-driven logic, configurable parameters, and fixed `CharacterState` access. All tests are passing.
+  - Addressed an `AttributeError` in `generate_event` related to `current_beat` handling.
+
+## Errors Encountered and Learnings
+- **Dataclass Attribute Access:** Reinforced learning about correct attribute access (dot notation) for dataclass instances nested within other data structures, resolving multiple `AttributeError` and `TypeError` instances in `WorldAgent` and its tests.
+- **Testing State Changes in Mutable Objects:** The `test_apply_plan_llm` failure highlighted the subtleties of testing modifications to mutable objects that are part of a larger state. Debugging involved careful tracing of object IDs and ensuring assertions accurately reflected the state at the precise moment of checking. Using local variables for assertion values proved helpful.
+- **LLM-Driven Logic Trade-offs:** Transitioning `WorldAgent` to be heavily LLM-driven greatly enhances flexibility and emergent possibilities. However, it necessitates meticulous prompt engineering, robust error/fallback handling, and careful management of context provided to the LLMs. Parsing LLM outputs (especially for structured data like in `update_from_outcome`) also requires careful design.
+- **Configuration for Fine-Tuning:** Making simulation parameters (e.g., scene length, event frequency) in `WorldAgent` configurable is crucial for allowing users or developers to fine-tune the narrative generation process without code changes.
+- **Async Test Warnings:** Noted `RuntimeWarning` and `DeprecationWarning` for `async` test methods in `test_character_agent.py`. This will need to be addressed by potentially using an async-compatible test runner or framework adjustments for those specific tests.
+
+## Next Steps Planned
+- **Phase 5: Narrator Module Implementation:**
+  - Define `Narrator` class in `modules/narrator.py`.
+  - Implement the `render()` method to take a scene log and POV character information, and use an LLM with `NARRATOR_SYSTEM` and `NARRATOR_USER` prompts to generate narrative prose.
+  - Write unit tests for the `Narrator` class.
+- Address `async` test warnings in `test_character_agent.py`.
+
+---
+# Progress
+
 Date: Fri May  9 22:38:17 PDT 2025
 
 ## Changes Since Last Update

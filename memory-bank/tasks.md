@@ -136,39 +136,38 @@ This document breaks down the FicWorld project into manageable subtasks, providi
 
 ### Subtask 4.1: Define `WorldAgent` Class
 - **Instructions:**
-    - [ ] Create `modules/world_agent.py`.
-    - [ ] Define `WorldAgent` class.
-    - [ ] Constructor `__init__(self, world_definition, llm_interface, characters_data)`:
-        - [ ] Initialize `self.world_state` based on `world_definition`.
-        - [ ] Store `llm_interface` if `WorldAgent` uses LLM for event generation.
-        - [ ] Store character data (names, activity coefficients) for `decide_next_actor`.
-    - [ ] Write unit tests for `WorldAgent.__init__` to verify correct initialization of world state and storage of dependencies.
+    - [x] Create `modules/world_agent.py`.
+    - [x] Define `WorldAgent` class.
+    - [x] Constructor `__init__(self, world_definition, llm_interface, characters_data, ...)`:
+        - [x] Initialize `self.world_state` based on `world_definition`.
+        - [x] Store `llm_interface` if `WorldAgent` uses LLM for event generation.
+        - [x] Store character data (names, activity coefficients) for `decide_next_actor`.
+        - [x] Store configurable thresholds (max_turns, stagnation, event injection chances, history limits).
+    - [x] Write unit tests for `WorldAgent.__init__` to verify correct initialization of world state and storage of dependencies and configurable parameters.
 
 ### Subtask 4.2: Implement Scene Management Methods
 - **Instructions:**
-    - [ ] `init_scene(self)`: Sets up initial `world_state` for a new scene.
-    - [ ] `judge_scene_end(self, scene_log)`: Determines if a scene should end (e.g., based on turn count, stagnation, or script beats).
-    - [ ] `choose_pov_character_for_scene(self, current_world_state)`: Selects POV character for narration.
-    - [ ] Write unit tests for `init_scene`, `judge_scene_end` (with various log inputs), and `choose_pov_character_for_scene` to ensure correct scene flow logic.
+    - [x] `init_scene(self)`: Sets up initial `world_state` for a new scene.
+    - [x] `judge_scene_end(self, scene_log)`: Determines if a scene should end (LLM-driven, with script mode and fallback heuristics).
+    - [x] `choose_pov_character_for_scene(self, current_world_state)`: Selects POV character for narration (LLM-driven, with fallback).
+    - [x] Write unit tests for `init_scene`, `judge_scene_end` (with various log inputs and LLM mocks), and `choose_pov_character_for_scene` (with LLM mocks and fallbacks) to ensure correct scene flow logic.
 
 ### Subtask 4.3: Implement Actor and Event Management
 - **Instructions:**
-    - [ ] `decide_next_actor(self, current_world_state)`: Selects the next `CharacterAgent` to act (e.g., roulette wheel based on activity coefficient). Returns agent object and its current state.
-    - [ ] `apply_plan(self, actor_name, plan_json, current_world_state)`:
-        - [ ] Validates the feasibility of `plan_json` against `current_world_state`.
-        - [ ] (Optional) Modifies plan if necessary.
-        - [ ] Updates `current_world_state` based on the plan.
-        - [ ] Generates a factual string outcome of the action (e.g., "Sir Rowan moves to the old library."). Returns this outcome.
-    - [ ] `should_inject_event(self, current_world_state)`: Logic to decide if a world event should be injected.
-    - [ ] `generate_event(self, current_world_state)`:
-        - [ ] If LLM-based: Prepares `WORLD_EVENT_GENERATION` prompt, calls LLM, parses output.
-        - [ ] If rule-based/scripted: Selects an event from `world_definition.world_events_pool` or script beats.
-        - [ ] Returns a factual string outcome of the event.
-    - [ ] `update_from_outcome(self, factual_outcome)`: Helper to parse a factual outcome and make necessary changes to `current_world_state`.
-    - [ ] Write unit tests for `decide_next_actor` (e.g., with mock character data and activity coefficients).
-    - [ ] Write unit tests for `apply_plan` covering different action types, validation logic, world state updates, and factual outcome generation.
-    - [ ] Write unit tests for `should_inject_event` and `generate_event` (mocking LLM if used for event generation, or testing rule-based/scripted event selection).
-    - [ ] Write unit tests for `update_from_outcome` to ensure correct parsing and state updates.
+    - [x] `decide_next_actor(self, current_world_state)`: Selects the next `CharacterAgent` to act (LLM-driven, with script mode and activity coefficient fallback).
+    - [x] `apply_plan(self, actor_name, plan_json, current_world_state)`:
+        - [x] Uses LLM to interpret `plan_json` in context of `current_world_state`.
+        - [x] Generates a factual string outcome of the action. Returns this outcome.
+    - [x] `should_inject_event(self, current_world_state)`: Logic to decide if a world event should be injected (LLM-driven, with script mode and fallback heuristics).
+    - [x] `generate_event(self, current_world_state)`:
+        - [x] If LLM-based: Prepares `WORLD_EVENT_GENERATION` prompt, calls LLM, parses output.
+        - [x] If rule-based/scripted: Selects an event from `world_definition.world_events_pool` or script beats.
+        - [x] Returns a factual string outcome of the event.
+    - [x] `update_from_outcome(self, factual_outcome)`: Helper to parse a factual outcome (using LLM to extract structured changes like location, conditions, time) and make necessary changes to `current_world_state`.
+    - [x] Write unit tests for `decide_next_actor` (LLM mocks, script mode, fallback).
+    - [x] Write unit tests for `apply_plan` (LLM mocks for outcome generation).
+    - [x] Write unit tests for `should_inject_event` and `generate_event` (LLM mocks, script mode, rule-based selection, fallback).
+    - [x] Write unit tests for `update_from_outcome` (LLM mocks for structured data extraction and state updates).
 
 ---
 

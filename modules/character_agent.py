@@ -345,13 +345,13 @@ Based on all this, and staying in character as {self.name}, what is your next pu
 
 Return your response ONLY as a JSON object following this schema:
 {{
-  "action": string,  // One of: "speak", "move", "interact_object", "use_skill", "observe_detail"
-  "details": {{      // Content varies by action type:
-    // For "speak": {{"text": "your dialogue here"}}
-    // For "move": {{"target_location": "location_name"}}
-    // For "interact_object": {{"object_name": "the object", "interaction_type": "pick up/examine/etc"}}
-    // For "use_skill": {{"skill_name": "the skill", "target": "target of skill if any"}}
-    // For "observe_detail": {{"focus": "what you're observing closely"}}
+  "action": string,  // Clearly describe the action (e.g., speak, move, cast_a_spell, investigate_a_clue).
+                  // Be creative; the WorldAgent will interpret your intended action.
+  "details": {{      // Provide any necessary details for this action.
+                  // For example, if speaking, include {{"text": "dialogue"}}.
+                  // If moving, {{"target_location": "destination"}}.
+                  // If interacting, {{"object_name": "the item", "interaction_type": "type of interaction"}}.
+                  // Define details clearly so the WorldAgent can simulate the outcome.
   }},
   "tone_of_action": string  // e.g., "cautious", "elated", "suspicious" - reflecting your current mood and the nature of the action
 }}
