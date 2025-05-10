@@ -232,10 +232,72 @@ This document breaks down the FicWorld project into manageable subtasks, providi
 
 ---
 
+## Phase 8: Script Mode and Beats Implementation
+
+**Description:** Allow the simulation to follow predefined narrative beats.
+**Dependencies:** Phase 4 (WorldAgent), Phase 6 (Simulation Loop).
+
+### Subtask 8.1: Enhance `WorldDefinition` and `Preset`
+- **Instructions:**
+    - [ ] Ensure `WorldDefinition` can load `script_beats` from `worlds/*.json`.
+    - [ ] Ensure `Preset` correctly identifies if `mode="script"`.
+
+### Subtask 8.2: Update `WorldAgent` for Script Mode
+- **Instructions:**
+    - [ ] Modify `WorldAgent.init_scene` to load relevant beats for the current scene if in script mode.
+    - [ ] Modify `WorldAgent.judge_scene_end` to consider if all beats for a scene are complete.
+    - [ ] Modify `WorldAgent.should_inject_event` and/or `generate_event` to check for triggered events from script beats or to guide event generation based on the current beat's requirements.
+    - [ ] `WorldAgent` might need to track the current active beat.
+    - [ ] Write unit tests for `WorldAgent` methods affected by script mode, verifying correct loading of beats, scene ending logic based on beats, and event generation/injection based on script requirements.
+
+### Subtask 8.3: Update `CharacterAgent` (Optional)
+- **Instructions:**
+    - [ ] Consider if `CharacterAgent.plan` needs to be aware of the current script beat to guide its actions (e.g., by adding beat description to the prompt context). This could be an advanced refinement.
+    - [ ] If implemented, write unit tests for `CharacterAgent.plan` to verify it correctly incorporates script beat information into its context and decision-making (mocking LLM).
+
+---
+
+## Phase 9: Testing, Debugging, and Refinement
+
+**Description:** Thoroughly test all integrated components, fix bugs, and refine prompts for better story quality.
+**Dependencies:** Phase 1-6 (core functionality). Phase 8 if implemented.
+
+### Subtask 9.1: Unit Tests
+- **Instructions:**
+    - [ ] Review and ensure comprehensive unit test coverage for all modules.
+    - [ ] Address any remaining test warnings (e.g., async test issues in `test_character_agent.py`).
+
+### Subtask 9.2: Integration Tests
+- **Instructions:**
+    - [ ] Expand integration tests for `main.py` to cover multiple scenes and turns.
+    - [ ] Test interactions between `CharacterAgent`, `WorldAgent`, `MemoryManager`, and `Narrator`.
+    - [ ] Verify data flow, state updates, and log generation across components.
+    - [ ] Test both "free" and "script" modes with sample presets.
+
+### Subtask 9.3: Prompt Engineering & Refinement
+- **Instructions:**
+    - [ ] Run multiple simulations with different presets.
+    - [ ] Analyze LLM outputs for each prompt slot (`CHARACTER_REFLECT`, `CHARACTER_PLAN`, `NARRATOR_USER`, `WORLD_AGENT` methods).
+    - [ ] Iteratively refine prompts in `prompt_design.md` and update their implementation in code to improve:
+        - [ ] Character coherence and consistency.
+        - [ ] Plan rationality and relevance.
+        - [ ] Mood update logic.
+        - [ ] Narrative quality (show, don't tell, POV adherence).
+        - [ ] Event relevance and impact.
+        - [ ] World state parsing from outcomes.
+
+### Subtask 9.4: Bug Fixing and Performance
+- **Instructions:**
+    - [ ] Address any bugs identified during integration testing.
+    - [ ] Pay attention to data flow issues, JSON parsing errors, and logical errors in agent/world interactions.
+    - [ ] Profile simulation runs and identify any performance bottlenecks (optional for MVP but good to keep in mind).
+
+---
+
 ## Phase 7: Advanced Memory - Vector Store Integration
 
 **Description:** Enhance `MemoryManager` to use a vector database for LTM.
-**Dependencies:** Phase 2 (MVP MemoryManager), Phase 6 (working simulation loop for testing).
+**Dependencies:** Phase 2 (MVP MemoryManager), Phase 6 (working simulation loop for testing), Phase 9 (stable system).
 
 ### Subtask 7.1: Define `VectorStoreDriver` Interface
 - **Instructions:**
@@ -267,68 +329,10 @@ This document breaks down the FicWorld project into manageable subtasks, providi
 
 ---
 
-## Phase 8: Script Mode and Beats Implementation
-
-**Description:** Allow the simulation to follow predefined narrative beats.
-**Dependencies:** Phase 4 (WorldAgent), Phase 6 (Simulation Loop).
-
-### Subtask 8.1: Enhance `WorldDefinition` and `Preset`
-- **Instructions:**
-    - [ ] Ensure `WorldDefinition` can load `script_beats` from `worlds/*.json`.
-    - [ ] Ensure `Preset` correctly identifies if `mode="script"`.
-
-### Subtask 8.2: Update `WorldAgent` for Script Mode
-- **Instructions:**
-    - [ ] Modify `WorldAgent.init_scene` to load relevant beats for the current scene if in script mode.
-    - [ ] Modify `WorldAgent.judge_scene_end` to consider if all beats for a scene are complete.
-    - [ ] Modify `WorldAgent.should_inject_event` and/or `generate_event` to check for triggered events from script beats or to guide event generation based on the current beat's requirements.
-    - [ ] `WorldAgent` might need to track the current active beat.
-    - [ ] Write unit tests for `WorldAgent` methods affected by script mode, verifying correct loading of beats, scene ending logic based on beats, and event generation/injection based on script requirements.
-
-### Subtask 8.3: Update `CharacterAgent` (Optional)
-- **Instructions:**
-    - [ ] Consider if `CharacterAgent.plan` needs to be aware of the current script beat to guide its actions (e.g., by adding beat description to the prompt context). This could be an advanced refinement.
-    - [ ] If implemented, write unit tests for `CharacterAgent.plan` to verify it correctly incorporates script beat information into its context and decision-making (mocking LLM).
-
----
-
-## Phase 9: Testing, Debugging, and Refinement
-
-**Description:** Thoroughly test all integrated components, fix bugs, and refine prompts for better story quality.
-**Dependencies:** Phase 1-6 (core functionality). Phase 7-8 if implemented.
-
-### Subtask 9.1: Unit Tests
-- **Instructions:**
-    - [ ] Write unit tests for individual modules/classes (ConfigLoader, LLMInterface, MemoryManager basic ops, agent methods with mock LLM calls).
-
-### Subtask 9.2: Integration Tests
-- **Instructions:**
-    - [ ] Test the flow from `main.py` through a single scene with a small number of turns.
-    - [ ] Verify data structures are populated and passed correctly.
-    - [ ] Check `story.md` and `simulation_log.jsonl` outputs.
-
-### Subtask 9.3: Prompt Engineering & Refinement
-- **Instructions:**
-    - [ ] Run multiple simulations with different presets.
-    - [ ] Analyze LLM outputs for each prompt slot (`CHARACTER_REFLECT`, `CHARACTER_PLAN`, `NARRATOR_USER`, `WORLD_EVENT_GENERATION`).
-    - [ ] Iteratively refine prompts in `prompt_design.md` and update their implementation in code to improve:
-        - [ ] Character coherence and consistency.
-        - [ ] Plan rationality and relevance.
-        - [ ] Mood update logic.
-        - [ ] Narrative quality (show, don't tell, POV adherence).
-        - [ ] Event relevance.
-
-### Subtask 9.4: Bug Fixing
-- **Instructions:**
-    - [ ] Address any bugs identified during testing.
-    - [ ] Pay attention to data flow issues, JSON parsing errors, and logical errors in agent/world interactions.
-
----
-
 ## Phase 10: Stretch Goals (Optional)
 
 **Description:** Implement advanced features based on project priorities.
-**Dependencies:** Stable core system (Phases 1-6, 9).
+**Dependencies:** Stable core system (Phases 1-6, 8, 9, 7).
 
 ### Subtask 10.1: FastAPI + Gradio UI Server (`server.py`)
 - **Instructions:**
