@@ -173,7 +173,7 @@ class WorldAgent:
         
         try:
             # Get LLM decision
-            response = self.llm_interface.generate_response(
+            response = self.llm_interface.generate_response_sync(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 temperature=0.2  # Low temperature for more consistent decisions
@@ -226,7 +226,7 @@ class WorldAgent:
         
         # If no active characters, default to Narrator
         if not active_chars:
-            return "Narrator", {"persona": "Objective observer", "goals": [], "current_mood": {}}
+            return "Narrator", {"persona": "Objective observer", "goals": [], "current_mood": MoodVector()}
             
         # If in script mode, we might have a predefined POV character
         # This would be an extension point for guided narrative
@@ -234,29 +234,35 @@ class WorldAgent:
         # Use LLM to choose the most interesting POV character based on their involvement and state
         
         # Prepare character information for LLM
-        character_info = []
+        character_info_list = []
         for char_name in active_chars:
             char_state = current_world_state.character_states.get(char_name)
-            char_data = self.character_states_initial_template.get(char_name, {})
+            # char_data_from_template is a CharacterState object from the initial template
+            char_data_from_template = self.character_states_initial_template.get(char_name)
             
             # Format mood for readability
             mood_str = ""
             if char_state and char_state.current_mood:
+                # Convert MoodVector to a dictionary to sort by values
+                mood_dict = char_state.current_mood.__dict__
                 top_emotions = sorted(
-                    char_state.current_mood.items(), 
+                    mood_dict.items(), 
                     key=lambda x: x[1], 
                     reverse=True
                 )[:2]  # Top 2 emotions
                 mood_str = ", ".join([f"{emotion}: {value:.1f}" for emotion, value in top_emotions])
             
-            char_info = (
-                f"Character: {char_name}\n"
-                f"Persona: {char_data.get('persona', 'Unknown')}\n"
-                f"Current location: {char_state.location if char_state else 'Unknown'}\n"
-                f"Dominant mood: {mood_str}\n"
-                f"Goals: {', '.join(char_data.get('goals', ['Unknown']))}"
+            persona = char_data_from_template.persona if char_data_from_template else "Unknown"
+            goals = char_data_from_template.goals if char_data_from_template else ["Unknown"]
+
+            char_info_text = (
+                f"Character: {char_name}\\n"
+                f"Persona: {persona}\\n"
+                f"Current location: {char_state.location if char_state else 'Unknown'}\\n"
+                f"Dominant mood: {mood_str}\\n"
+                f"Goals: {', '.join(goals)}"
             )
-            character_info.append(char_info)
+            character_info_list.append(char_info_text) # Renamed from character_info to avoid conflict
         
         # Get recent events to provide context
         recent_events = current_world_state.recent_events_summary[-5:] if current_world_state.recent_events_summary else []
@@ -275,7 +281,7 @@ class WorldAgent:
             f"Current scene: {current_world_state.current_scene_id}\n\n"
             "Available characters and their states:\n\n"
             f"{'-'*40}\n"
-            f"{('-'*40 + '\\n').join(character_info)}\n"
+            f"{('-'*40 + '\\n').join(character_info_list)}\n"
             f"{'-'*40}\n\n"
             "Recent events in the scene:\n"
             f"{recent_events_text}\n\n"
@@ -290,7 +296,7 @@ class WorldAgent:
         
         try:
             # Get LLM decision
-            response = self.llm_interface.generate_response(
+            response = self.llm_interface.generate_response_sync(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 temperature=0.3
@@ -316,27 +322,31 @@ class WorldAgent:
                 
             # Get character info
             char_state = current_world_state.character_states.get(selected_character)
-            char_data = self.character_states_initial_template.get(selected_character, {})
+            # char_data_from_template is a CharacterState object from the initial template
+            char_data_from_template = self.character_states_initial_template.get(selected_character)
             
             pov_info = {
-                "persona": char_data.get("persona", ""),
-                "goals": char_data.get("goals", []),
-                "current_mood": char_state.current_mood if char_state else {}
+                "persona": char_data_from_template.persona if char_data_from_template else "",
+                "goals": char_data_from_template.goals if char_data_from_template else [],
+                "current_mood": char_state.current_mood if char_state and char_state.current_mood else MoodVector() # Return empty MoodVector if none
             }
             
             return selected_character, pov_info
             
         except Exception as e:
             # Fallback to random selection if LLM fails
+            if not active_chars: # Ensure active_chars is not empty before random.choice
+                return "Narrator", {"persona": "Objective observer", "goals": [], "current_mood": MoodVector()}
             selected_character = random.choice(active_chars)
             
             char_state = current_world_state.character_states.get(selected_character)
-            char_data = self.character_states_initial_template.get(selected_character, {})
+            # char_data_from_template is a CharacterState object from the initial template
+            char_data_from_template = self.character_states_initial_template.get(selected_character)
             
             pov_info = {
-                "persona": char_data.get("persona", ""),
-                "goals": char_data.get("goals", []),
-                "current_mood": char_state.current_mood if char_state else {}
+                "persona": char_data_from_template.persona if char_data_from_template else "",
+                "goals": char_data_from_template.goals if char_data_from_template else [],
+                "current_mood": char_state.current_mood if char_state and char_state.current_mood else MoodVector()
             }
             
             return selected_character, pov_info
@@ -374,27 +384,32 @@ class WorldAgent:
         character_descriptions = []
         for char_name in active_chars:
             char_state = current_world_state.character_states.get(char_name)
-            char_data = self.character_states_initial_template.get(char_name, {})
+            # char_data is a CharacterState object from the initial template
+            char_data_from_template = self.character_states_initial_template.get(char_name)
             
             # Format mood for readability
             mood_str = ""
             if char_state and char_state.current_mood:
+                # Convert MoodVector to a dictionary to sort by values
+                mood_dict = char_state.current_mood.__dict__
                 top_emotions = sorted(
-                    char_state.current_mood.items(), 
+                    mood_dict.items(), 
                     key=lambda x: x[1], 
                     reverse=True
                 )[:2]  # Top 2 emotions
                 mood_str = ", ".join([f"{emotion}: {value:.1f}" for emotion, value in top_emotions])
             
-            activity_coefficient = char_data.get("activity", 1.0)
+            activity_coefficient = char_data_from_template.activity_coefficient if char_data_from_template else 1.0
+            persona = char_data_from_template.persona if char_data_from_template else "Unknown"
+            goals = char_data_from_template.goals if char_data_from_template else ["Unknown"]
             
             char_desc = (
-                f"Character: {char_name}\n"
-                f"Persona: {char_data.get('persona', 'Unknown')}\n"
-                f"Current location: {char_state.location if char_state else 'Unknown'}\n"
-                f"Dominant mood: {mood_str}\n"
-                f"Activity coefficient: {activity_coefficient:.1f}\n"
-                f"Goals: {', '.join(char_data.get('goals', ['Unknown']))}"
+                f"Character: {char_name}\\n"
+                f"Persona: {persona}\\n"
+                f"Current location: {char_state.location if char_state else 'Unknown'}\\n"
+                f"Dominant mood: {mood_str}\\n"
+                f"Activity coefficient: {activity_coefficient:.1f}\\n"
+                f"Goals: {', '.join(goals)}"
             )
             character_descriptions.append(char_desc)
         
@@ -447,7 +462,7 @@ class WorldAgent:
         
         try:
             # Get LLM decision
-            response = self.llm_interface.generate_response(
+            response = self.llm_interface.generate_response_sync(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 temperature=0.3
@@ -473,7 +488,8 @@ class WorldAgent:
                 activity_weights = {}
                 for char_name in active_chars:
                     # Default to 1.0 if not specified
-                    activity_weights[char_name] = self.character_states_initial_template.get(char_name, {}).get("activity", 1.0)
+                    char_data_template = self.character_states_initial_template.get(char_name)
+                    activity_weights[char_name] = char_data_template.activity_coefficient if char_data_template else 1.0
                     
                 # Normalize weights
                 total_weight = sum(activity_weights.values())
@@ -501,7 +517,8 @@ class WorldAgent:
             activity_weights = {}
             for char_name in active_chars:
                 # Default to 1.0 if not specified
-                activity_weights[char_name] = self.character_states_initial_template.get(char_name, {}).get("activity", 1.0)
+                char_data_template = self.character_states_initial_template.get(char_name)
+                activity_weights[char_name] = char_data_template.activity_coefficient if char_data_template else 1.0
                 
             # Normalize weights
             total_weight = sum(activity_weights.values())
@@ -611,7 +628,7 @@ class WorldAgent:
         
         try:
             # Generate outcome using LLM
-            outcome_response = self.llm_interface.generate_response(
+            outcome_response = self.llm_interface.generate_response_sync(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 temperature=0.4  # Lower temperature for more predictable, factual outcomes
@@ -690,7 +707,7 @@ class WorldAgent:
         
         try:
             # Get LLM decision
-            response = self.llm_interface.generate_response(
+            response = self.llm_interface.generate_response_sync(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 temperature=0.2  # Low temperature for more consistent decisions
@@ -742,7 +759,7 @@ class WorldAgent:
             if hasattr(self.world_definition, 'world_events_pool') and self.world_definition.world_events_pool:
                 event = next((e for e in self.world_definition.world_events_pool if e.get("event_id") == event_id), None)
                 if event:
-                    event_desc = event.get("description", "Something happens.")
+                    event_desc = event.description if event and hasattr(event, 'description') else "Something happens."
                     if beat_id_to_complete: # Check if we captured a beat_id
                         self.completed_beats.add(beat_id_to_complete)
                     self.current_beat = None 
@@ -752,7 +769,7 @@ class WorldAgent:
         # Approach 2: Pick randomly from event pool
         if hasattr(self.world_definition, 'world_events_pool') and self.world_definition.world_events_pool:
             event = random.choice(self.world_definition.world_events_pool)
-            return event.get("description", "Something unexpected happens.")
+            return event.description if event and hasattr(event, 'description') else "Something unexpected happens."
             
         # Approach 3: Use LLM to generate a contextual event
         if self.llm_interface:
@@ -801,7 +818,7 @@ class WorldAgent:
             
             try:
                 # Generate event using LLM
-                event_response = self.llm_interface.generate_response(
+                event_response = self.llm_interface.generate_response_sync(
                     system_prompt=system_prompt,
                     user_prompt=user_prompt,
                     temperature=0.7
@@ -879,7 +896,7 @@ class WorldAgent:
         
         try:
             # Get LLM extraction
-            response = self.llm_interface.generate_response(
+            response = self.llm_interface.generate_response_sync(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 temperature=0.1  # Very low temperature for consistent, factual extraction

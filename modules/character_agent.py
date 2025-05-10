@@ -315,10 +315,14 @@ This reflection is for your internal state ONLY. Do NOT reveal the specifics of 
         current_location = "unknown"
         characters_present = []
         if self.name in world_state.character_states:
-            current_location = world_state.character_states[self.name].get("location", "unknown")
+            # Access .location directly from CharacterState object
+            char_state_obj = world_state.character_states[self.name]
+            current_location = char_state_obj.location if char_state_obj else "unknown"
+            
             characters_present = [
-                name for name, state in world_state.character_states.items() 
-                if state.get("location") == current_location and name != self.name
+                name for name, other_char_state_obj in world_state.character_states.items() 
+                # Access .location directly from other CharacterState objects
+                if (other_char_state_obj.location == current_location if other_char_state_obj else False) and name != self.name
             ]
         
         characters_present_str = ", ".join(characters_present) if characters_present else "no one else"

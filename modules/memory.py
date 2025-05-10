@@ -118,7 +118,10 @@ class MemoryManager:
             return None
 
         # MVP summarization: concatenate all factual outcomes
-        summary_parts = [f"Event by {log_entry.actor}: {log_entry.outcome}" for log_entry in scene_log]
+        summary_parts = [
+            f"Event by {log_entry.get('actor', 'Unknown Actor')}: {log_entry.get('outcome', 'Unknown Outcome')}" 
+            for log_entry in scene_log
+        ]
         summary = "\n".join(summary_parts)
         
         # Store the summary

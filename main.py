@@ -9,6 +9,7 @@ import json
 import os
 import sys
 from pathlib import Path
+import dataclasses # Added for asdict
 
 from modules.config_loader import ConfigLoader
 from modules.llm_interface import LLMInterface
@@ -64,7 +65,7 @@ def main():
                 "roles": [role.archetype_name for role in config["roles"]],
                 "mode": config["preset"].mode,
                 "max_scenes": config["preset"].max_scenes,
-                "llm": config["preset"].llm.model_dump() # Changed to model_dump for LLMSettings
+                "llm": dataclasses.asdict(config["preset"].llm) # Changed to use dataclasses.asdict
             }, f, indent=2)
         
         # Display loaded configuration
@@ -78,10 +79,7 @@ def main():
         # Initialize LLM Interface
         logger.info("Initializing LLMInterface...")
         llm_interface = LLMInterface(
-            api_key=os.getenv("OPENROUTER_API_KEY"), # Ensure OPENROUTER_API_KEY is set in .env
-            model_name=config["preset"].llm.model_name,
-            router_url=config["preset"].llm.router_url,
-            max_tokens=config["preset"].llm.max_tokens
+            model_name=config["preset"].llm.model_name
         )
         
         # Initialize Memory Manager
@@ -189,7 +187,7 @@ def main():
                 # Actor reflects (private)
                 logger.debug(f"Actor {actor_name} reflecting...")
                 reflection_output = actor_agent.reflect_sync(
-                    world_state_summary=current_world_view, # Or a more summarized version
+                    world_state=current_world_view, # Changed from world_state_summary
                     relevant_memories=relevant_memories
                 )
                 # Update mood in WorldAgent's state
@@ -199,7 +197,7 @@ def main():
                 # Actor plans (public)
                 logger.debug(f"Actor {actor_name} planning...")
                 plan_json = actor_agent.plan_sync(
-                    world_state_summary=current_world_view,
+                    world_state=current_world_view,
                     relevant_memories=relevant_memories,
                     internal_thought_summary=reflection_output.internal_thought
                 )
@@ -218,10 +216,10 @@ def main():
                     "scene": scene_num + 1,
                     "turn": turn_num,
                     "actor": actor_name,
-                    "plan": plan_json.model_dump() if plan_json else None, # Assuming plan_json is pydantic model
+                    "plan": dataclasses.asdict(plan_json) if plan_json else None, # Changed to dataclasses.asdict
                     "reflection_internal_thought": reflection_output.internal_thought,
-                    "mood_before_plan": actor_current_mood.model_dump() if actor_current_mood else None, # Mood before reflection
-                    "mood_after_reflection": reflection_output.updated_mood.model_dump() if reflection_output.updated_mood else None,
+                    "mood_before_plan": dataclasses.asdict(actor_current_mood) if actor_current_mood else None, # Mood before reflection
+                    "mood_after_reflection": dataclasses.asdict(reflection_output.updated_mood) if reflection_output.updated_mood else None,
                     "outcome": factual_outcome,
                     "is_world_event": False
                 }
@@ -293,7 +291,7 @@ def main():
             
             if pov_character_name and pov_character_info:
                 prose = narrator.render(
-                    scene_log_for_narrator=current_scene_log_entries, # Changed to pass List[LogEntry dict]
+                    scene_log=current_scene_log_entries, # Changed argument name
                     pov_character_name=pov_character_name,
                     pov_character_info=pov_character_info # Ensure this matches Narrator's expectation
                 )
