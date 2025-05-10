@@ -98,34 +98,34 @@ This document breaks down the FicWorld project into manageable subtasks, providi
 
 ### Subtask 3.1: Define `CharacterAgent` Class
 - **Instructions:**
-    - [ ] Create `modules/character_agent.py`.
-    - [ ] Define `CharacterAgent` class.
-    - [ ] Constructor `__init__(self, role_archetype, llm_interface, memory_manager, initial_world_state)`:
-        - [ ] Store persona, goals (instantiated from templates if needed), current_mood (from `starting_mood_template`).
-        - [ ] Store references to `llm_interface` and `memory_manager`.
-        - [ ] Initialize any other character-specific state.
-    - [ ] Write unit tests for `CharacterAgent.__init__` to ensure correct initialization of persona, goals, mood, and references to dependencies.
+    - [x] Create `modules/character_agent.py`.
+    - [x] Define `CharacterAgent` class.
+    - [x] Constructor `__init__(self, role_archetype, llm_interface, memory_manager, initial_world_state)`:
+        - [x] Store persona, goals (instantiated from templates if needed), current_mood (from `starting_mood_template`).
+        - [x] Store references to `llm_interface` and `memory_manager`.
+        - [x] Initialize any other character-specific state.
+    - [x] Write unit tests for `CharacterAgent.__init__` to ensure correct initialization of persona, goals, mood, and references to dependencies.
 
 ### Subtask 3.2: Implement `reflect()` Method
 - **Instructions:**
-    - [ ] Define `reflect(self, world_state, relevant_memories)` method.
-    - [ ] Prepare the `CHARACTER_REFLECT` prompt using inputs from `world_state`, `relevant_memories`, character's persona, goals, and current mood.
-    - [ ] Call `llm_interface.generate_response()` with the prompt.
-    - [ ] Parse the LLM's JSON output: `{"updated_mood": {...}, "internal_thought": "..."}`.
-    - [ ] Update `self.current_mood` with `updated_mood`.
-    - [ ] Return the `updated_mood` and `internal_thought`.
-    - [ ] Implement error handling for LLM response parsing.
-    - [ ] Write unit tests for `reflect()` (mocking `llm_interface`) to verify correct prompt preparation, LLM call, parsing of JSON response, mood update, and return values. Test error handling for LLM response issues.
+    - [x] Define `reflect(self, world_state, relevant_memories)` method.
+    - [x] Prepare the `CHARACTER_REFLECT` prompt using inputs from `world_state`, `relevant_memories`, character's persona, goals, and current mood.
+    - [x] Call `llm_interface.generate_response()` with the prompt.
+    - [x] Parse the LLM's JSON output: `{"updated_mood": {...}, "internal_thought": "..."}`.
+    - [x] Update `self.current_mood` with `updated_mood`.
+    - [x] Return the `updated_mood` and `internal_thought`.
+    - [x] Implement error handling for LLM response parsing.
+    - [x] Write unit tests for `reflect()` (mocking `llm_interface`) to verify correct prompt preparation, LLM call, parsing of JSON response, mood update, and return values. Test error handling for LLM response issues.
 
 ### Subtask 3.3: Implement `plan()` Method
 - **Instructions:**
-    - [ ] Define `plan(self, world_state, relevant_memories, internal_thought_summary)` method.
-    - [ ] Prepare the `CHARACTER_PLAN` prompt using inputs from `world_state`, `relevant_memories`, `internal_thought_summary`, character's persona, goals, and (updated) current mood.
-    - [ ] Call `llm_interface.generate_response()` with the prompt.
-    - [ ] Parse the LLM's JSON output (`CharacterPlanOutput` schema).
-    - [ ] Return the parsed plan JSON.
-    - [ ] Implement error handling for LLM response parsing.
-    - [ ] Write unit tests for `plan()` (mocking `llm_interface`) to verify correct prompt preparation, LLM call, parsing of `CharacterPlanOutput` JSON, and return values. Test error handling for LLM response issues.
+    - [x] Define `plan(self, world_state, relevant_memories, internal_thought_summary)` method.
+    - [x] Prepare the `CHARACTER_PLAN` prompt using inputs from `world_state`, `relevant_memories`, `internal_thought_summary`, character's persona, goals, and (updated) current mood.
+    - [x] Call `llm_interface.generate_response()` with the prompt.
+    - [x] Parse the LLM's JSON output (`CharacterPlanOutput` schema).
+    - [x] Return the parsed plan JSON.
+    - [x] Implement error handling for LLM response parsing.
+    - [x] Write unit tests for `plan()` (mocking `llm_interface`) to verify correct prompt preparation, LLM call, parsing of `CharacterPlanOutput` JSON, and return values. Test error handling for LLM response issues.
 
 ---
 
