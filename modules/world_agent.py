@@ -3,7 +3,7 @@ import random
 from dataclasses import dataclass, field
 import json
 
-from .models import WorldDefinition, WorldState, CharacterState
+from .models import WorldDefinition, WorldState, CharacterState, MoodVector
 
 
 class WorldAgent:
@@ -16,8 +16,8 @@ class WorldAgent:
         self, 
         world_definition: WorldDefinition, 
         llm_interface, 
-        characters_data: Dict[str, Any],
-        max_turns_per_scene: int = 20,
+        character_states: Dict[str, CharacterState],
+        max_scene_turns: int = 20,
         stagnation_detection_threshold: int = 3,
         llm_event_injection_override_chance: float = 0.05,
         fallback_event_injection_chance: float = 0.15,
@@ -29,8 +29,8 @@ class WorldAgent:
         Args:
             world_definition: The WorldDefinition object containing world settings, locations, etc.
             llm_interface: The LLMInterface object for generating events (if used)
-            characters_data: Dictionary mapping character names to their data, including activity coefficients
-            max_turns_per_scene: Maximum turns before a scene is forced to end.
+            character_states: Dictionary mapping character names to their data, including activity coefficients
+            max_scene_turns: Maximum turns before a scene is forced to end.
             stagnation_detection_threshold: Number of turns with minimal change to trigger stagnation in fallback.
             llm_event_injection_override_chance: Chance to inject event even if LLM says no.
             fallback_event_injection_chance: Chance to inject event if LLM fails.
@@ -38,10 +38,10 @@ class WorldAgent:
         """
         self.world_definition = world_definition
         self.llm_interface = llm_interface
-        self.characters_data = characters_data
+        self.character_states_initial_template = character_states
 
         # Configurable parameters
-        self.max_turns_per_scene = max_turns_per_scene
+        self.max_scene_turns = max_scene_turns
         self.stagnation_detection_threshold = stagnation_detection_threshold
         self.llm_event_injection_override_chance = llm_event_injection_override_chance
         self.fallback_event_injection_chance = fallback_event_injection_chance
@@ -53,14 +53,8 @@ class WorldAgent:
             turn_number=0,
             time_of_day="morning",  # Default value, can be configured
             environment_description=world_definition.description,
-            active_characters=list(characters_data.keys()),
-            character_states={
-                name: CharacterState(
-                    location=world_definition.locations[0].id if world_definition.locations else "default_location",
-                    current_mood=character_data.get("starting_mood", {}),
-                    conditions=[]
-                ) for name, character_data in characters_data.items()
-            },
+            active_characters=list(character_states.keys()),
+            character_states=character_states,
             recent_events_summary=[]
         )
         
@@ -136,7 +130,7 @@ class WorldAgent:
                     pass # Fall through to other checks
         
         # Hard safety limit - prevent excessively long scenes
-        if self.world_state.turn_number >= self.max_turns_per_scene:
+        if self.world_state.turn_number >= self.max_scene_turns:
             return True
             
         # If there are no events yet, continue the scene
@@ -243,7 +237,7 @@ class WorldAgent:
         character_info = []
         for char_name in active_chars:
             char_state = current_world_state.character_states.get(char_name)
-            char_data = self.characters_data.get(char_name, {})
+            char_data = self.character_states_initial_template.get(char_name, {})
             
             # Format mood for readability
             mood_str = ""
@@ -322,7 +316,7 @@ class WorldAgent:
                 
             # Get character info
             char_state = current_world_state.character_states.get(selected_character)
-            char_data = self.characters_data.get(selected_character, {})
+            char_data = self.character_states_initial_template.get(selected_character, {})
             
             pov_info = {
                 "persona": char_data.get("persona", ""),
@@ -337,7 +331,7 @@ class WorldAgent:
             selected_character = random.choice(active_chars)
             
             char_state = current_world_state.character_states.get(selected_character)
-            char_data = self.characters_data.get(selected_character, {})
+            char_data = self.character_states_initial_template.get(selected_character, {})
             
             pov_info = {
                 "persona": char_data.get("persona", ""),
@@ -380,7 +374,7 @@ class WorldAgent:
         character_descriptions = []
         for char_name in active_chars:
             char_state = current_world_state.character_states.get(char_name)
-            char_data = self.characters_data.get(char_name, {})
+            char_data = self.character_states_initial_template.get(char_name, {})
             
             # Format mood for readability
             mood_str = ""
@@ -479,7 +473,7 @@ class WorldAgent:
                 activity_weights = {}
                 for char_name in active_chars:
                     # Default to 1.0 if not specified
-                    activity_weights[char_name] = self.characters_data.get(char_name, {}).get("activity", 1.0)
+                    activity_weights[char_name] = self.character_states_initial_template.get(char_name, {}).get("activity", 1.0)
                     
                 # Normalize weights
                 total_weight = sum(activity_weights.values())
@@ -507,7 +501,7 @@ class WorldAgent:
             activity_weights = {}
             for char_name in active_chars:
                 # Default to 1.0 if not specified
-                activity_weights[char_name] = self.characters_data.get(char_name, {}).get("activity", 1.0)
+                activity_weights[char_name] = self.character_states_initial_template.get(char_name, {}).get("activity", 1.0)
                 
             # Normalize weights
             total_weight = sum(activity_weights.values())
@@ -549,9 +543,9 @@ class WorldAgent:
         current_world_state.turn_number += 1
         
         # Extract plan details
-        action_type = plan_json.get("action", "")
-        details = plan_json.get("details", {})
-        tone = plan_json.get("tone_of_action", "neutral")
+        action_type = plan_json.action
+        details = plan_json.details
+        tone = plan_json.tone_of_action
         
         # Create a textual representation of the plan for LLM processing
         plan_text = f"Action: {action_type}"
@@ -624,14 +618,14 @@ class WorldAgent:
             )
             
             # Clean up response if needed (remove quotes, extra spaces, etc.)
-            outcome = outcome_response.strip().strip('"\'')
+            outcome = outcome_response.strip().strip('"\\\'')
             
-            # Add the outcome to recent events
-            current_world_state.recent_events_summary.append(outcome)
+            # Add the outcome to recent events - MOVED to update_from_outcome
+            # current_world_state.recent_events_summary.append(outcome)
             
-            # Keep recent events list manageable
-            if len(current_world_state.recent_events_summary) > self.recent_events_history_limit:
-                current_world_state.recent_events_summary = current_world_state.recent_events_summary[-self.recent_events_history_limit:]
+            # Keep recent events list manageable - MOVED to update_from_outcome
+            # if len(current_world_state.recent_events_summary) > self.recent_events_history_limit:
+            #     current_world_state.recent_events_summary = current_world_state.recent_events_summary[-self.recent_events_history_limit:]
             
             # Location and other state changes will be handled by update_from_outcome
             
@@ -640,10 +634,10 @@ class WorldAgent:
         except Exception as e:
             # Fallback if LLM call fails
             fallback_outcome = f"{actor_name} attempts to {action_type}."
-            current_world_state.recent_events_summary.append(fallback_outcome)
+            # current_world_state.recent_events_summary.append(fallback_outcome)
             # Ensure fallback also respects history limit
-            if len(current_world_state.recent_events_summary) > self.recent_events_history_limit:
-                current_world_state.recent_events_summary = current_world_state.recent_events_summary[-self.recent_events_history_limit:]
+            # if len(current_world_state.recent_events_summary) > self.recent_events_history_limit:
+            #     current_world_state.recent_events_summary = current_world_state.recent_events_summary[-self.recent_events_history_limit:]
             return fallback_outcome
     
     def should_inject_event(self, current_world_state=None) -> bool:
@@ -814,7 +808,7 @@ class WorldAgent:
                 )
                 
                 # Clean up response if needed (remove quotes, extra spaces, etc.)
-                event_text = event_response.strip().strip('"\'')
+                event_text = event_response.strip().strip('"\\\'')
                 return event_text
                 
             except Exception as e:
@@ -926,4 +920,44 @@ class WorldAgent:
         except Exception as e:
             # If LLM fails, just keep the event in history without structured updates
             # We already added the event to recent_events_summary above
+            pass 
+
+    # --- New methods required by main.py ---
+    def get_world_state_view_for_actor(self, actor_name: str) -> WorldState:
+        """
+        Returns the current world state. 
+        For now, it returns the full world state. This could be tailored later if needed.
+        """
+        # In a more complex scenario, this might filter or summarize the world state
+        # based on the actor's perception or location.
+        return self.world_state
+
+    def get_character_mood(self, actor_name: str) -> Optional[MoodVector]:
+        """
+        Retrieves the current mood of a specified character.
+        
+        Args:
+            actor_name: The name of the character.
+            
+        Returns:
+            The MoodVector of the character, or None if character not found.
+        """
+        if actor_name in self.world_state.character_states:
+            return self.world_state.character_states[actor_name].current_mood
+        return None
+
+    def update_character_mood(self, actor_name: str, updated_mood: MoodVector) -> None:
+        """
+        Updates the mood of a specified character in the world state.
+        
+        Args:
+            actor_name: The name of the character.
+            updated_mood: The new MoodVector for the character.
+        """
+        if actor_name in self.world_state.character_states:
+            self.world_state.character_states[actor_name].current_mood = updated_mood
+        else:
+            # This case should ideally not happen if actor_name comes from decide_next_actor
+            # which should only pick from active_characters present in character_states.
+            # logging.warning(f"Attempted to update mood for non-existent character: {actor_name}")
             pass 

@@ -21,9 +21,9 @@ class MoodVector:
 
     def __post_init__(self):
         """Ensure all values are between 0 and 1"""
-        for attr, value in self.__dict__.items():
+        for attr_name, value in self.__dict__.items():
             if not 0.0 <= value <= 1.0:
-                setattr(self, attr, max(0.0, min(1.0, value)))
+                setattr(self, attr_name, max(0.0, min(1.0, value)))
 
 
 @dataclass
@@ -118,6 +118,16 @@ class WorldDefinition:
 
 
 @dataclass
+class LLMSettings:
+    """
+    Configuration for the LLM provider and model.
+    """
+    model_name: str
+    max_tokens: int
+    router_url: Optional[str] = "https://openrouter.ai/api/v1" # Default OpenRouter URL
+
+
+@dataclass
 class Preset:
     """
     Simulation configuration loaded from presets/*.json
@@ -127,7 +137,7 @@ class Preset:
     role_files: List[str]
     mode: str  # "free" or "script"
     max_scenes: int
-    llm: str
+    llm: LLMSettings
     script_file: Optional[str] = None
     # Add additional configuration parameters as needed
 
@@ -137,9 +147,14 @@ class CharacterState:
     """
     Current state of a character within the world, as tracked by WorldAgent.
     """
-    location: str
+    name: str
+    persona: str
+    goals: List[str]
     current_mood: MoodVector
+    activity_coefficient: float
+    location: str
     conditions: List[str] = field(default_factory=list)
+    inventory: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -181,14 +196,30 @@ class MemoryEntry:
 
 
 @dataclass
+class ReflectionOutput:
+    """
+    Output of the CharacterAgent.reflect() method.
+    """
+    updated_mood: MoodVector
+    internal_thought: str
+
+
+@dataclass
 class LogEntry:
     """
     An entry in the simulation log.
     Used to track turns for narration and debugging.
     """
+    scene: int
+    turn: int
     actor: str
-    plan: CharacterPlanOutput
     outcome: str
-    mood_during_action: MoodVector
+    mood_after_reflection: Optional[MoodVector] = None # Mood after reflection, before plan
+    plan: Optional[CharacterPlanOutput] = None # Plan (for actors)
+    reflection_internal_thought: Optional[str] = None # Private thought (for actors)
+    mood_before_plan: Optional[MoodVector] = None # Mood before reflection (for actors)
     timestamp: datetime = field(default_factory=datetime.now)
-    is_world_event: bool = False 
+    is_world_event: bool = False
+    # mood_during_action from old spec seems redundant if we have mood_after_reflection
+    # and the action/outcome. If needed, it can be added back or derived.
+    # For world events, plan, reflection, and specific moods might be None. 

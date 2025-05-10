@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 **IMPORTANT**: You cannot update [progress.md](mdc:memory-bank/v0/progress.md), [activeContext.md](mdc:memory-bank/v0/activeContext.md), or [tasks.md](mdc:memory-bank/v0/tasks.md) until you verify the task is complete - that means:
 - all tests must be passing 

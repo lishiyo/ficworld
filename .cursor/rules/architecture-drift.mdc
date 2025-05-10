@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 We want small, modular, encapsulated files, ALWAYS less than 500 lines. If you are creating a large file OR planning to edit a file to make it longer than 500 lines, STOP CODING and ask me first so we can figure out a better way to design this.
 

@@ -8,7 +8,9 @@ from typing import Dict, List, Any, Optional, Tuple
 import json
 import logging
 
-from .models import MoodVector, RoleArchetype, WorldState
+from .models import MoodVector, RoleArchetype, WorldState, ReflectionOutput, CharacterPlanOutput
+from .llm_interface import LLMInterface
+from .memory import MemoryManager
 
 
 class CharacterAgent:
@@ -24,8 +26,8 @@ class CharacterAgent:
     def __init__(
         self,
         role_archetype: RoleArchetype,
-        llm_interface: Any,  # LLMInterface
-        memory_manager: Any,  # MemoryManager
+        llm_interface: LLMInterface,
+        memory_manager: MemoryManager,
         initial_world_state: Optional[WorldState] = None
     ):
         """
@@ -55,7 +57,7 @@ class CharacterAgent:
         
         logging.info(f"Character Agent '{self.name}' initialized with mood: {self.current_mood}")
         
-    async def reflect(self, world_state: WorldState, relevant_memories: List[Any]) -> Dict[str, Any]:
+    async def reflect(self, world_state: WorldState, relevant_memories: List[Any]) -> ReflectionOutput:
         """
         First step of the two-step thinking process: private reflection and mood update.
         
@@ -68,11 +70,7 @@ class CharacterAgent:
             relevant_memories: List of relevant MemoryEntry objects for this character.
             
         Returns:
-            A dictionary with the updated mood vector and internal thought:
-            {
-                "updated_mood": MoodVector(...),
-                "internal_thought": "..."
-            }
+            A ReflectionOutput object containing the updated mood and internal thought.
         """
         # Prepare the system prompt for reflection
         system_prompt = self._prepare_character_system_prompt(
@@ -113,18 +111,18 @@ class CharacterAgent:
             
             logging.info(f"{self.name} reflected on the situation. Mood updated to: {updated_mood}")
             
-            return {
-                "updated_mood": updated_mood,
-                "internal_thought": internal_thought
-            }
+            return ReflectionOutput(
+                updated_mood=updated_mood,
+                internal_thought=internal_thought
+            )
             
         except Exception as e:
             logging.error(f"Error during {self.name}'s reflection: {str(e)}")
             # In case of error, return the current mood and a generic thought
-            return {
-                "updated_mood": self.current_mood,
-                "internal_thought": f"[Error processing reflection: {str(e)}]"
-            }
+            return ReflectionOutput(
+                updated_mood=self.current_mood,
+                internal_thought=f"[Error processing reflection: {str(e)}]"
+            )
     
     def _prepare_character_system_prompt(self, relevant_memories=None, world_state=None) -> str:
         """
@@ -231,7 +229,7 @@ This reflection is for your internal state ONLY. Do NOT reveal the specifics of 
         world_state: WorldState, 
         relevant_memories: List[Any], 
         internal_thought_summary: str
-    ) -> Dict[str, Any]:
+    ) -> CharacterPlanOutput:
         """
         Second step of the two-step thinking process: public action planning.
         
@@ -245,12 +243,7 @@ This reflection is for your internal state ONLY. Do NOT reveal the specifics of 
             internal_thought_summary: Summary of the character's private reflection.
             
         Returns:
-            A structured plan JSON object following the CharacterPlanOutput schema:
-            {
-                "action": string (e.g., "speak", "move", "interact_object"),
-                "details": { ... },  # Content varies by action type
-                "tone_of_action": string (e.g., "cautious", "angry", "determined")
-            }
+            A CharacterPlanOutput object.
         """
         # Prepare the system prompt for planning
         system_prompt = self._prepare_character_system_prompt(
@@ -280,18 +273,22 @@ This reflection is for your internal state ONLY. Do NOT reveal the specifics of 
             # Log the plan (without sensitive internal thought info)
             logging.info(f"{self.name} planned action: {plan_json['action']} with tone: {plan_json['tone_of_action']}")
             
-            return plan_json
+            return CharacterPlanOutput(
+                action=plan_json["action"],
+                details=plan_json["details"],
+                tone_of_action=plan_json["tone_of_action"]
+            )
             
         except Exception as e:
             logging.error(f"Error during {self.name}'s planning: {str(e)}")
             # In case of error, return a default "speak" action explaining confusion
-            return {
-                "action": "speak",
-                "details": {
+            return CharacterPlanOutput(
+                action="speak",
+                details={
                     "text": f"I... hmm, let me gather my thoughts."
                 },
-                "tone_of_action": "confused"
-            }
+                tone_of_action="confused"
+            )
     
     def _prepare_plan_prompt(
         self, 
@@ -361,7 +358,7 @@ Choose an action that naturally follows from the situation, your character, and 
     
     # Synchronous versions for simpler usage scenarios
     
-    def reflect_sync(self, world_state: WorldState, relevant_memories: List[Any]) -> Dict[str, Any]:
+    def reflect_sync(self, world_state: WorldState, relevant_memories: List[Any]) -> ReflectionOutput:
         """Synchronous wrapper for reflect()."""
         import asyncio
         loop = asyncio.new_event_loop()
@@ -375,7 +372,7 @@ Choose an action that naturally follows from the situation, your character, and 
         world_state: WorldState, 
         relevant_memories: List[Any], 
         internal_thought_summary: str
-    ) -> Dict[str, Any]:
+    ) -> CharacterPlanOutput:
         """Synchronous wrapper for plan()."""
         import asyncio
         loop = asyncio.new_event_loop()

@@ -21,20 +21,34 @@ source venv312/bin/activate  # On Windows: venv312\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Create a `.env` file in the project root and add your API keys:
+4. Create a `.env` file in the project root and add your API keys. FicWorld primarily uses OpenRouter, so ensure your OpenRouter key is set:
 ```
-OPENROUTER_API_KEY=your_openai_api_key
-# Add other API keys as needed
+OPENROUTER_API_KEY=your_openrouter_api_key
+# Add other API keys if other LLM providers are configured in presets
 ```
 
 ## Usage
 
-1. Run a simulation with a specific preset:
-```bash
-python main.py --preset demo_forest_run
-```
+To run a simulation, use the `main.py` script with the `--preset` argument specifying the name of a preset file located in the `presets/` directory (without the `.json` extension).
 
-2. Check the generated story output in the `outputs/` directory.
+**Examples:**
+
+1. Run a simulation with a specific preset (e.g., `demo_forest_run.json`):
+   ```bash
+   python main.py --preset demo_forest_run
+   ```
+
+2. Run in debug mode for more verbose logging:
+   ```bash
+   python main.py --preset demo_forest_run --debug
+   ```
+
+3. Specify a custom output directory:
+   ```bash
+   python main.py --preset demo_forest_run --output-dir outputs/my_custom_run
+   ```
+
+Outputs, including the generated story (`story.md`) and a detailed simulation log (`simulation_log.jsonl`), will be saved in a directory under `outputs/` (e.g., `outputs/demo_forest_run/`) unless a custom output directory is specified.
 
 ## Project Structure
 

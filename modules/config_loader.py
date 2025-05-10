@@ -9,8 +9,9 @@ from typing import Dict, List, Optional, Any
 
 from .models import (
     Preset, WorldDefinition, RoleArchetype, Location, ScriptBeat, 
-    WorldEvent, GlobalLore, FactionInfo
+    WorldEvent, GlobalLore, FactionInfo, LLMSettings
 )
+from .ficworld_config import LLM_MODEL_NAME, LLM_MAX_TOKENS # Import defaults
 
 
 class ConfigLoader:
@@ -71,13 +72,29 @@ class ConfigLoader:
         preset_path = self.presets_dir / preset_name
         preset_data = self.load_json(preset_path)
         
+        # Parse LLM settings
+        llm_data = preset_data.get('llm')
+        if isinstance(llm_data, str): # Backwards compatibility for old string format
+            # This assumes a default structure if only a model name string is provided.
+            # Consider if this fallback is robust enough or if presets should strictly adhere to the new object format.
+            llm_settings = LLMSettings(model_name=llm_data, max_tokens=LLM_MAX_TOKENS) # Use imported default
+        elif isinstance(llm_data, dict):
+            llm_settings = LLMSettings(
+                model_name=llm_data.get('model_name', LLM_MODEL_NAME), # Use imported default
+                max_tokens=llm_data.get('max_tokens', LLM_MAX_TOKENS), # Use imported default
+                router_url=llm_data.get('router_url') # Optional, will use default from LLMSettings if None
+            )
+        else:
+            # Default LLMSettings if 'llm' key is missing or not a dict/str
+            llm_settings = LLMSettings(model_name=LLM_MODEL_NAME, max_tokens=LLM_MAX_TOKENS) # Use imported defaults
+
         # Create and return a Preset object
         return Preset(
             world_file=preset_data.get('world_file'),
             role_files=preset_data.get('role_files', []),
             mode=preset_data.get('mode', 'free'),
             max_scenes=preset_data.get('max_scenes', 3),
-            llm=preset_data.get('llm', 'deepseek/deepseek-r1:free'),
+            llm=llm_settings, # Use the parsed LLMSettings object
             script_file=preset_data.get('script_file')
         )
     

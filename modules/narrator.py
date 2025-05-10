@@ -53,7 +53,7 @@ class Narrator:
         pov_persona = pov_character_info.get("persona", "No persona summary available.")
         goals_list = pov_character_info.get("goals", ["No specific goals available."])
         pov_goals = "\n".join([f"- {goal}" for goal in goals_list])
-        pov_mood = str(pov_character_info.get("mood", "No mood data available.")) # Convert dict to string for simple display
+        pov_mood = str(pov_character_info.get("current_mood", "No mood data available.")) # Changed "mood" to "current_mood"
 
         # Format scene_log for the prompt
         formatted_scene_log_lines = []
