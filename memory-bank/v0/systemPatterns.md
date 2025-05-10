@@ -1,4 +1,4 @@
-# AgentVerse MVP
+# FicWorld MVP
 
 ### 1  Vision & Goal
 
@@ -48,7 +48,7 @@ main.py
 ### 5  Directory Layout
 
 ```
-agentverse/
+ficworld/
  ├─ data/
  │   ├─ roles/          # per‑character JSON
  │   ├─ worlds/         # location graph, lore
