@@ -36,7 +36,7 @@ This document breaks down the FicWorld project into manageable subtasks, providi
     - [x] Define `WorldState` (e.g., current_scene_id, turn_number, time_of_day, environment_description, active_characters, character_states, recent_events_summary).
     - [x] Define `MemoryEntry` (timestamp, actor_name, event_description, mood_at_encoding, embedding, significance).
     - [x] Define `LogEntry` for simulation log (actor, plan, outcome, mood_during_action).
-    - [ ] Write unit tests for data structure instantiation, default values, and any helper methods (e.g., `RoleArchetype.to_mood_vector()`).
+    - [x] Write unit tests for data structure instantiation, default values, and any helper methods (e.g., `RoleArchetype.to_mood_vector()`).
 
 ### Subtask 1.3: Implement ConfigLoader Module
 - **Instructions:**
@@ -45,7 +45,7 @@ This document breaks down the FicWorld project into manageable subtasks, providi
     - [x] Implement logic within `ConfigLoader` to also load the associated `WorldDefinition` and `RoleArchetype` files specified in the preset.
     - [x] Ensure paths are handled correctly relative to the project structure.
     - [x] Add basic error handling (e.g., file not found).
-    - [ ] Write unit tests for `ConfigLoader` to verify correct loading and parsing of preset, world, and role JSON files, including handling of file not found and invalid JSON errors.
+    - [x] Write unit tests for `ConfigLoader` to verify correct loading and parsing of preset, world, and role JSON files, including handling of file not found and invalid JSON errors.
 
 ### Subtask 1.4: Initial `main.py` Structure
 - **Instructions:**
@@ -53,7 +53,7 @@ This document breaks down the FicWorld project into manageable subtasks, providi
     - [x] Add argument parsing for `--preset <preset_name>`.
     - [x] Use `ConfigLoader` to load the specified preset.
     - [x] Print loaded configuration (for initial testing).
-    - [ ] Write basic integration tests for `main.py` argument parsing and successful configuration loading via `ConfigLoader` (mocking file system if necessary).
+    - [x] Write basic integration tests for `main.py` argument parsing and successful configuration loading via `ConfigLoader` (mocking file system if necessary).
 
 ---
 

@@ -86,7 +86,7 @@ class ConfigLoader:
         Load a world definition.
         
         Args:
-            world_file: Path to the world definition file (relative to data/worlds/).
+            world_file: Path to the world definition file (e.g., "test_world.json" or "worlds/test_world.json").
             
         Returns:
             WorldDefinition object.
@@ -94,13 +94,14 @@ class ConfigLoader:
         Raises:
             FileNotFoundError: If the world file doesn't exist.
         """
-        if not world_file.startswith('worlds/'):
-            world_file = f"worlds/{world_file}"
-        
+        # Ensure .json extension
         if not world_file.endswith('.json'):
             world_file += '.json'
         
-        world_path = self.base_dir / "data" / world_file.replace("worlds/", "")
+        # Get the bare filename, removing potential directory prefixes
+        bare_world_file = world_file.split('/')[-1]
+        
+        world_path = self.worlds_dir / bare_world_file
         world_data = self.load_json(world_path)
         
         # Parse locations
@@ -162,7 +163,7 @@ class ConfigLoader:
         Load a role archetype.
         
         Args:
-            role_file: Path to the role archetype file (relative to data/roles/).
+            role_file: Path to the role archetype file (e.g., "test_role.json" or "roles/test_role.json").
             
         Returns:
             RoleArchetype object.
@@ -170,13 +171,14 @@ class ConfigLoader:
         Raises:
             FileNotFoundError: If the role file doesn't exist.
         """
-        if not role_file.startswith('roles/'):
-            role_file = f"roles/{role_file}"
-        
+        # Ensure .json extension
         if not role_file.endswith('.json'):
             role_file += '.json'
-        
-        role_path = self.base_dir / "data" / role_file.replace("roles/", "")
+            
+        # Get the bare filename, removing potential directory prefixes
+        bare_role_file = role_file.split('/')[-1]
+
+        role_path = self.roles_dir / bare_role_file
         role_data = self.load_json(role_path)
         
         # Create and return RoleArchetype
