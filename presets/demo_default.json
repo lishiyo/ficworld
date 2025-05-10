@@ -1,0 +1,13 @@
+{
+    "world_file": "example_world.json",
+    "role_files": [
+      "example_role.json"
+    ],
+    "mode": "free",
+    "max_scenes": 1,
+    "llm": {
+      "model_name": "deepseek/deepseek-r1",
+      "max_tokens": 20048,
+      "router_url": "https://openrouter.ai/api/v1"
+    }
+  }

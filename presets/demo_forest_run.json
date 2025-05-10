@@ -7,5 +7,9 @@
   ],
   "mode": "free",
   "max_scenes": 5,
-  "llm": "deepseek/deepseek-r1:free"
+  "llm": {
+    "model_name": "deepseek/deepseek-r1", 
+    "max_tokens": 20048,
+    "router_url": "https://openrouter.ai/api/v1"
+  }
 } 
