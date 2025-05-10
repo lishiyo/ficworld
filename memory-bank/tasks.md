@@ -23,34 +23,37 @@ This document breaks down the FicWorld project into manageable subtasks, providi
         - [ ] `ficworld/outputs/`
     - [x] Add a `.gitignore` file (e.g., for `__pycache__`, `venv/`, `outputs/*`, `.chroma/` etc.).
     - [x] Set up a virtual environment (e.g., `venv312/`).
-    - [ ] Create an initial `requirements.txt` (can be minimal for now).
-    - [ ] Create a basic README with install and run instructions.
+    - [x] Create an initial `requirements.txt` (can be minimal for now).
+    - [x] Create a basic README with install and run instructions.
 
 ### Subtask 1.2: Define Core Data Structures (as Python dataclasses or Pydantic models)
 - **Instructions:**
-    - [ ] Define `MoodVector` (e.g., joy, fear, anger, sadness, surprise, trust floats).
-    - [ ] Define `RoleArchetype` (loading from `data/roles/*.json` - includes archetype_name, persona_template, goal_templates, starting_mood_template, activity_coefficient, icon).
-    - [ ] Define `WorldDefinition` (loading from `data/worlds/*.json` - includes world_name, description, global_lore, locations, script_beats, world_events_pool).
-    - [ ] Define `Preset` (loading from `presets/*.json` - includes world_file, role_files, mode, max_scenes, llm config).
-    - [ ] Define `CharacterPlanOutput` (schema for `CharacterAgent.plan()` - action, details, tone_of_action).
-    - [ ] Define `WorldState` (e.g., current_scene_id, turn_number, time_of_day, environment_description, active_characters, character_states, recent_events_summary).
-    - [ ] Define `MemoryEntry` (timestamp, actor_name, event_description, mood_at_encoding, embedding, significance).
-    - [ ] Define `LogEntry` for simulation log (actor, plan, outcome, mood_during_action).
+    - [x] Define `MoodVector` (e.g., joy, fear, anger, sadness, surprise, trust floats).
+    - [x] Define `RoleArchetype` (loading from `data/roles/*.json` - includes archetype_name, persona_template, goal_templates, starting_mood_template, activity_coefficient, icon).
+    - [x] Define `WorldDefinition` (loading from `data/worlds/*.json` - includes world_name, description, global_lore, locations, script_beats, world_events_pool).
+    - [x] Define `Preset` (loading from `presets/*.json` - includes world_file, role_files, mode, max_scenes, llm config).
+    - [x] Define `CharacterPlanOutput` (schema for `CharacterAgent.plan()` - action, details, tone_of_action).
+    - [x] Define `WorldState` (e.g., current_scene_id, turn_number, time_of_day, environment_description, active_characters, character_states, recent_events_summary).
+    - [x] Define `MemoryEntry` (timestamp, actor_name, event_description, mood_at_encoding, embedding, significance).
+    - [x] Define `LogEntry` for simulation log (actor, plan, outcome, mood_during_action).
+    - [ ] Write unit tests for data structure instantiation, default values, and any helper methods (e.g., `RoleArchetype.to_mood_vector()`).
 
 ### Subtask 1.3: Implement ConfigLoader Module
 - **Instructions:**
-    - [ ] Create `modules/config_loader.py`.
-    - [ ] Implement function to load a `Preset` JSON file by name (e.g., `load_preset(preset_name)`).
-    - [ ] Implement logic within `ConfigLoader` to also load the associated `WorldDefinition` and `RoleArchetype` files specified in the preset.
-    - [ ] Ensure paths are handled correctly relative to the project structure.
-    - [ ] Add basic error handling (e.g., file not found).
+    - [x] Create `modules/config_loader.py`.
+    - [x] Implement function to load a `Preset` JSON file by name (e.g., `load_preset(preset_name)`).
+    - [x] Implement logic within `ConfigLoader` to also load the associated `WorldDefinition` and `RoleArchetype` files specified in the preset.
+    - [x] Ensure paths are handled correctly relative to the project structure.
+    - [x] Add basic error handling (e.g., file not found).
+    - [ ] Write unit tests for `ConfigLoader` to verify correct loading and parsing of preset, world, and role JSON files, including handling of file not found and invalid JSON errors.
 
 ### Subtask 1.4: Initial `main.py` Structure
 - **Instructions:**
-    - [ ] Create `main.py`.
-    - [ ] Add argument parsing for `--preset <preset_name>`.
-    - [ ] Use `ConfigLoader` to load the specified preset.
-    - [ ] Print loaded configuration (for initial testing).
+    - [x] Create `main.py`.
+    - [x] Add argument parsing for `--preset <preset_name>`.
+    - [x] Use `ConfigLoader` to load the specified preset.
+    - [x] Print loaded configuration (for initial testing).
+    - [ ] Write basic integration tests for `main.py` argument parsing and successful configuration loading via `ConfigLoader` (mocking file system if necessary).
 
 ---
 
@@ -61,28 +64,30 @@ This document breaks down the FicWorld project into manageable subtasks, providi
 
 ### Subtask 2.1: Implement `LLMInterface` Module
 - **Instructions:**
-    - [ ] Create `modules/llm_interface.py`.
-    - [ ] Define a base `LLMInterface` class/functions.
-    - [ ] Implement a method to make calls to an LLM provider (e.g., OpenRouter).
-        - [ ] Handle API key management (e.g., via environment variables).
-        - [ ] Construct requests based on prompt messages (system, user, assistant).
-        - [ ] Parse LLM responses.
-        - [ ] Include basic error handling and retry logic (optional for MVP).
-    - [ ] Support model selection based on preset configuration.
+    - [x] Create `modules/llm_interface.py`.
+    - [x] Define a base `LLMInterface` class/functions.
+    - [x] Implement a method to make calls to an LLM provider (e.g., OpenRouter).
+        - [x] Handle API key management (e.g., via environment variables, using `OPENROUTER_API_KEY`).
+        - [x] Construct requests based on prompt messages (system, user, assistant).
+        - [x] Parse LLM responses.
+        - [x] Include basic error handling and retry logic (optional for MVP).
+    - [x] Support model selection based on preset configuration.
+    - [ ] Write unit tests for `LLMInterface` (mocking `httpx` calls) to verify correct request construction, API key handling, and response parsing for both text and JSON modes. Test error handling for API issues.
 
 ### Subtask 2.2: Implement MVP `MemoryManager` (In-Memory)
 - **Instructions:**
-    - [ ] Create `modules/memory.py`.
-    - [ ] Define `MemoryManager` class.
-    - [ ] Implement `remember(actor_name, event_description, mood_at_encoding)`:
-        - [ ] Stores a `MemoryEntry` (without embedding for now) in an in-memory list (e.g., `self.ltm_store = []`).
-        - [ ] Include timestamp.
-    - [ ] Implement `retrieve(actor_name, query_text, current_mood)`:
-        - [ ] For MVP: Return all memories for the actor, or last N memories.
-        - [ ] (No semantic search or mood-based filtering in this MVP version of retrieve, but design to allow it later).
-    - [ ] Implement `summarise_scene(scene_number, scene_log)`:
-        - [ ] For MVP: Can be a stub or simply concatenate event descriptions. Actual LLM summarization is a later step.
-    - [ ] STM can be handled as part of `WorldState.recent_events_summary` or a simple list in `MemoryManager`.
+    - [x] Create `modules/memory.py`.
+    - [x] Define `MemoryManager` class.
+    - [x] Implement `remember(actor_name, event_description, mood_at_encoding)`:
+        - [x] Stores a `MemoryEntry` (without embedding for now) in an in-memory list (e.g., `self.ltm_store = []`).
+        - [x] Include timestamp.
+    - [x] Implement `retrieve(actor_name, query_text, current_mood)`:
+        - [x] For MVP: Return all memories for the actor, or last N memories.
+        - [x] (No semantic search or mood-based filtering in this MVP version of retrieve, but design to allow it later).
+    - [x] Implement `summarise_scene(scene_number, scene_log)`:
+        - [x] For MVP: Can be a stub or simply concatenate event descriptions. Actual LLM summarization is a later step.
+    - [x] STM can be handled as part of `WorldState.recent_events_summary` or a simple list in `MemoryManager`.
+    - [ ] Write unit tests for `MemoryManager` methods (`remember`, `retrieve`, `summarise_scene` MVP, `clear_stm`, `reset_memory`) to ensure correct in-memory data manipulation.
 
 ---
 
@@ -99,6 +104,7 @@ This document breaks down the FicWorld project into manageable subtasks, providi
         - [ ] Store persona, goals (instantiated from templates if needed), current_mood (from `starting_mood_template`).
         - [ ] Store references to `llm_interface` and `memory_manager`.
         - [ ] Initialize any other character-specific state.
+    - [ ] Write unit tests for `CharacterAgent.__init__` to ensure correct initialization of persona, goals, mood, and references to dependencies.
 
 ### Subtask 3.2: Implement `reflect()` Method
 - **Instructions:**
@@ -109,6 +115,7 @@ This document breaks down the FicWorld project into manageable subtasks, providi
     - [ ] Update `self.current_mood` with `updated_mood`.
     - [ ] Return the `updated_mood` and `internal_thought`.
     - [ ] Implement error handling for LLM response parsing.
+    - [ ] Write unit tests for `reflect()` (mocking `llm_interface`) to verify correct prompt preparation, LLM call, parsing of JSON response, mood update, and return values. Test error handling for LLM response issues.
 
 ### Subtask 3.3: Implement `plan()` Method
 - **Instructions:**
@@ -118,6 +125,7 @@ This document breaks down the FicWorld project into manageable subtasks, providi
     - [ ] Parse the LLM's JSON output (`CharacterPlanOutput` schema).
     - [ ] Return the parsed plan JSON.
     - [ ] Implement error handling for LLM response parsing.
+    - [ ] Write unit tests for `plan()` (mocking `llm_interface`) to verify correct prompt preparation, LLM call, parsing of `CharacterPlanOutput` JSON, and return values. Test error handling for LLM response issues.
 
 ---
 
@@ -134,12 +142,14 @@ This document breaks down the FicWorld project into manageable subtasks, providi
         - [ ] Initialize `self.world_state` based on `world_definition`.
         - [ ] Store `llm_interface` if `WorldAgent` uses LLM for event generation.
         - [ ] Store character data (names, activity coefficients) for `decide_next_actor`.
+    - [ ] Write unit tests for `WorldAgent.__init__` to verify correct initialization of world state and storage of dependencies.
 
 ### Subtask 4.2: Implement Scene Management Methods
 - **Instructions:**
     - [ ] `init_scene(self)`: Sets up initial `world_state` for a new scene.
     - [ ] `judge_scene_end(self, scene_log)`: Determines if a scene should end (e.g., based on turn count, stagnation, or script beats).
     - [ ] `choose_pov_character_for_scene(self, current_world_state)`: Selects POV character for narration.
+    - [ ] Write unit tests for `init_scene`, `judge_scene_end` (with various log inputs), and `choose_pov_character_for_scene` to ensure correct scene flow logic.
 
 ### Subtask 4.3: Implement Actor and Event Management
 - **Instructions:**
@@ -155,6 +165,10 @@ This document breaks down the FicWorld project into manageable subtasks, providi
         - [ ] If rule-based/scripted: Selects an event from `world_definition.world_events_pool` or script beats.
         - [ ] Returns a factual string outcome of the event.
     - [ ] `update_from_outcome(self, factual_outcome)`: Helper to parse a factual outcome and make necessary changes to `current_world_state`.
+    - [ ] Write unit tests for `decide_next_actor` (e.g., with mock character data and activity coefficients).
+    - [ ] Write unit tests for `apply_plan` covering different action types, validation logic, world state updates, and factual outcome generation.
+    - [ ] Write unit tests for `should_inject_event` and `generate_event` (mocking LLM if used for event generation, or testing rule-based/scripted event selection).
+    - [ ] Write unit tests for `update_from_outcome` to ensure correct parsing and state updates.
 
 ---
 
@@ -168,6 +182,7 @@ This document breaks down the FicWorld project into manageable subtasks, providi
     - [ ] Create `modules/narrator.py`.
     - [ ] Define `Narrator` class.
     - [ ] Constructor `__init__(self, llm_interface)`: Stores `llm_interface`.
+    - [ ] Write unit tests for `Narrator.__init__` to verify dependency storage.
 
 ### Subtask 5.2: Implement `render()` Method
 - **Instructions:**
@@ -177,6 +192,7 @@ This document breaks down the FicWorld project into manageable subtasks, providi
     - [ ] Call `llm_interface.generate_response()`.
     - [ ] Return the generated prose string.
     - [ ] Implement error handling.
+    - [ ] Write unit tests for `render()` (mocking `llm_interface`) to verify correct prompt preparation (system and user with scene log and POV info) and LLM call. Test error handling.
 
 ---
 
@@ -213,6 +229,7 @@ This document breaks down the FicWorld project into manageable subtasks, providi
         - [ ] Clear `log_for_narrator`.
     - [ ] Output the final story to `outputs/<preset_name>/story.md`.
     - [ ] (Optional) Output `simulation_log.jsonl`.
+    - [ ] Develop integration tests that run a minimal end-to-end simulation for one or two turns, verifying component interactions and basic output generation (mocking LLM calls to control variability and cost).
 
 ---
 
@@ -235,6 +252,7 @@ This document breaks down the FicWorld project into manageable subtasks, providi
     - [ ] Implement `query_memories`: performs semantic search with metadata filtering.
     - [ ] Handle Chroma client initialization and collection management.
     - [ ] Refer to `memory_strategy.md` for schema and query logic.
+    - [ ] Write unit tests for `ChromaVectorStoreDriver` (mocking `chromadb` client if actual DB operations are slow/complex for unit tests, or using an ephemeral in-memory Chroma instance) to verify embedding generation, memory addition, and querying with metadata filters.
 
 ### Subtask 7.3: Update `MemoryManager` to Use `VectorStoreDriver`
 - **Instructions:**
@@ -245,6 +263,8 @@ This document breaks down the FicWorld project into manageable subtasks, providi
         - [ ] Call `driver.query_memories` to get semantically similar memories.
         - [ ] Implement the Python-side re-ranking logic for Emotional RAG (cosine_sim(query_mood, memory_mood)) as per `memory_strategy.md` and `systemPatterns.md`.
     - [ ] Update `MemoryManager.summarise_scene` to use an LLM via `llm_interface` to generate summaries and store them in LTM.
+    - [ ] Write unit tests for the updated `MemoryManager` methods, focusing on the interaction with the `VectorStoreDriver` (mocking the driver). Test the Emotional RAG re-ranking logic.
+    - [ ] Write unit tests for LLM-based `summarise_scene` in `MemoryManager` (mocking `llm_interface`).
 
 ---
 
@@ -264,10 +284,12 @@ This document breaks down the FicWorld project into manageable subtasks, providi
     - [ ] Modify `WorldAgent.judge_scene_end` to consider if all beats for a scene are complete.
     - [ ] Modify `WorldAgent.should_inject_event` and/or `generate_event` to check for triggered events from script beats or to guide event generation based on the current beat's requirements.
     - [ ] `WorldAgent` might need to track the current active beat.
+    - [ ] Write unit tests for `WorldAgent` methods affected by script mode, verifying correct loading of beats, scene ending logic based on beats, and event generation/injection based on script requirements.
 
 ### Subtask 8.3: Update `CharacterAgent` (Optional)
 - **Instructions:**
     - [ ] Consider if `CharacterAgent.plan` needs to be aware of the current script beat to guide its actions (e.g., by adding beat description to the prompt context). This could be an advanced refinement.
+    - [ ] If implemented, write unit tests for `CharacterAgent.plan` to verify it correctly incorporates script beat information into its context and decision-making (mocking LLM).
 
 ---
 
