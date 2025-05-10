@@ -72,7 +72,7 @@ This document breaks down the FicWorld project into manageable subtasks, providi
         - [x] Parse LLM responses.
         - [x] Include basic error handling and retry logic (optional for MVP).
     - [x] Support model selection based on preset configuration.
-    - [ ] Write unit tests for `LLMInterface` (mocking `httpx` calls) to verify correct request construction, API key handling, and response parsing for both text and JSON modes. Test error handling for API issues.
+    - [x] Write unit tests for `LLMInterface` (mocking `httpx` calls) to verify correct request construction, API key handling, and response parsing for both text and JSON modes. Test error handling for API issues.
 
 ### Subtask 2.2: Implement MVP `MemoryManager` (In-Memory)
 - **Instructions:**
@@ -87,7 +87,7 @@ This document breaks down the FicWorld project into manageable subtasks, providi
     - [x] Implement `summarise_scene(scene_number, scene_log)`:
         - [x] For MVP: Can be a stub or simply concatenate event descriptions. Actual LLM summarization is a later step.
     - [x] STM can be handled as part of `WorldState.recent_events_summary` or a simple list in `MemoryManager`.
-    - [ ] Write unit tests for `MemoryManager` methods (`remember`, `retrieve`, `summarise_scene` MVP, `clear_stm`, `reset_memory`) to ensure correct in-memory data manipulation.
+    - [x] Write unit tests for `MemoryManager` methods (`remember`, `retrieve`, `summarise_scene` MVP, `clear_stm`, `reset_memory`) to ensure correct in-memory data manipulation.
 
 ---
 
