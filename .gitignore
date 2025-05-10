@@ -9,7 +9,11 @@ nohup.out
 
 venv312/
 .env
-data/
+bookworld-original/
+custom_modes/
+outputs/
 
-
-
+__pycache__/
+*.pyc
+*.DS_Store
+examples/
