@@ -129,6 +129,7 @@ class MemoryManager:
         
         # Optional: Create a MemoryEntry for the scene summary itself in LTM
         # This allows agents to recall high-level plot points of past scenes.
+        # IMPORTANT: Agents should ONLY remember what they would actually know (by witnessing or being told).
         # For MVP, we'll just store it in self.scene_summaries.
         # Example for future:
         # self.remember(
