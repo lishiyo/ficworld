@@ -202,33 +202,39 @@ This document breaks down the FicWorld project into manageable subtasks, providi
 
 ### Subtask 6.1: Expand `main.py` Logic
 - **Instructions:**
-    - [ ] Instantiate `ConfigLoader`, `LLMInterface`, `MemoryManager`.
-    - [ ] Load preset using `ConfigLoader`.
-    - [ ] Instantiate `WorldAgent` using loaded world definition and LLM interface.
-    - [ ] Instantiate `CharacterAgent` objects based on loaded role archetypes, LLM interface, and memory manager. Pass them to `WorldAgent` or make them accessible.
-    - [ ] Instantiate `Narrator`.
-    - [ ] Implement the main simulation loop as per `systemPatterns.md` (Section 7):
-        - [ ] Loop through scenes.
-        - [ ] `world_agent.init_scene()`.
-        - [ ] Inner loop for turns within a scene (`while not world_agent.judge_scene_end(...)`).
-            - [ ] `actor_agent, actor_state = world_agent.decide_next_actor(...)`.
-            - [ ] `relevant_memories = memory_manager.retrieve(...)`.
-            - [ ] `private_reflection_output = actor_agent.reflect(...)`.
-            - [ ] Update `actor_state.current_mood` in `world_agent.world_state`.
-            - [ ] `plan_json = actor_agent.plan(...)`.
-            - [ ] `factual_outcome = world_agent.apply_plan(...)`.
-            - [ ] Create `log_entry` and append to `log_for_narrator`.
-            - [ ] `world_agent.world_state.update_from_outcome(factual_outcome)`.
-            - [ ] `memory_manager.remember(actor_agent, factual_outcome, mood=actor_state.current_mood)`.
-            - [ ] Event injection logic: `world_agent.should_inject_event()`, `world_agent.generate_event()`, append to log, update world state.
-        - [ ] `pov_character_name, pov_character_info = world_agent.choose_pov_character_for_scene(...)`.
-        - [ ] `prose = narrator.render(log_for_narrator, pov_character_name, pov_character_info)`.
-        - [ ] Append `prose` to the main story.
-        - [ ] `memory_manager.summarise_scene(...)`.
-        - [ ] Clear `log_for_narrator`.
-    - [ ] Output the final story to `outputs/<preset_name>/story.md`.
-    - [ ] (Optional) Output `simulation_log.jsonl`.
-    - [ ] Develop integration tests that run a minimal end-to-end simulation for one or two turns, verifying component interactions and basic output generation (mocking LLM calls to control variability and cost).
+    - [x] Instantiate `ConfigLoader`, `LLMInterface`, `MemoryManager`.
+    - [x] Load preset using `ConfigLoader`.
+    - [x] Instantiate `WorldAgent` using loaded world definition and LLM interface.
+    - [x] Instantiate `CharacterAgent` objects based on loaded role archetypes, LLM interface, and memory manager. Pass them to `WorldAgent` or make them accessible.
+    - [x] Instantiate `Narrator`.
+    - [x] Implement the main simulation loop as per `systemPatterns.md` (Section 7):
+        - [x] Loop through scenes.
+        - [x] `world_agent.init_scene()`.
+        - [x] Inner loop for turns within a scene (`while not world_agent.judge_scene_end(...)`).
+            - [x] `actor_agent, actor_state = world_agent.decide_next_actor(...)`.
+            - [x] `relevant_memories = memory_manager.retrieve(...)`.
+            - [x] `private_reflection_output = actor_agent.reflect(...)`.
+            - [x] Update `actor_state.current_mood` in `world_agent.world_state`.
+            - [x] `plan_json = actor_agent.plan(...)`.
+            - [x] `factual_outcome = world_agent.apply_plan(...)`.
+            - [x] Create `log_entry` and append to `log_for_narrator`.
+            - [x] `world_agent.world_state.update_from_outcome(factual_outcome)`.
+            - [x] `memory_manager.remember(actor_agent, factual_outcome, mood=actor_state.current_mood)`.
+            - [x] Event injection logic: `world_agent.should_inject_event()`, `world_agent.generate_event()`, append to log, update world state.
+        - [x] `pov_character_name, pov_character_info = world_agent.choose_pov_character_for_scene(...)`.
+        - [x] `prose = narrator.render(log_for_narrator, pov_character_name, pov_character_info)`.
+        - [x] Append `prose` to the main story.
+        - [x] `memory_manager.summarise_scene(...)`.
+        - [x] Clear `log_for_narrator`.
+    - [x] Output the final story to `outputs/<preset_name>/story.md`.
+    - [x] (Optional) Output `simulation_log.jsonl`.
+    - [x] Develop integration tests that run a minimal end-to-end simulation for one or two turns, verifying component interactions and basic output generation (mocking LLM calls to control variability and cost).
+
+---
+
+## Phase 7: Improvements to Story Gen
+
+See [story_loop.md](./story_loop.md) for how this system is CURRENTLY working.
 
 ---
 
@@ -294,17 +300,17 @@ This document breaks down the FicWorld project into manageable subtasks, providi
 
 ---
 
-## Phase 7: Advanced Memory - Vector Store Integration
+## Phase 10: Advanced Memory - Vector Store Integration
 
 **Description:** Enhance `MemoryManager` to use a vector database for LTM.
 **Dependencies:** Phase 2 (MVP MemoryManager), Phase 6 (working simulation loop for testing), Phase 9 (stable system).
 
-### Subtask 7.1: Define `VectorStoreDriver` Interface
+### Subtask 10.1: Define `VectorStoreDriver` Interface
 - **Instructions:**
     - [ ] In `modules/memory.py` (or a new `modules/vector_drivers.py`), define an abstract base class or interface `VectorStoreDriver`.
     - [ ] Specify methods like `add_memory(memory_entry)`, `query_memories(query_embedding, n_results, filter_metadata)`.
 
-### Subtask 7.2: Implement `ChromaVectorStoreDriver`
+### Subtask 10.2: Implement `ChromaVectorStoreDriver`
 - **Instructions:**
     - [ ] Implement a concrete class `ChromaVectorStoreDriver(VectorStoreDriver)`.
     - [ ] Integrate `chromadb` library.
@@ -315,7 +321,7 @@ This document breaks down the FicWorld project into manageable subtasks, providi
     - [ ] Refer to `memory_strategy.md` for schema and query logic.
     - [ ] Write unit tests for `ChromaVectorStoreDriver` (mocking `chromadb` client if actual DB operations are slow/complex for unit tests, or using an ephemeral in-memory Chroma instance) to verify embedding generation, memory addition, and querying with metadata filters.
 
-### Subtask 7.3: Update `MemoryManager` to Use `VectorStoreDriver`
+### Subtask 10.3: Update `MemoryManager` to Use `VectorStoreDriver`
 - **Instructions:**
     - [ ] Modify `MemoryManager.__init__` to accept a `vector_store_driver` instance.
     - [ ] Update `MemoryManager.remember` to generate embedding (if not done by driver) and call `driver.add_memory`.
@@ -329,12 +335,12 @@ This document breaks down the FicWorld project into manageable subtasks, providi
 
 ---
 
-## Phase 10: Stretch Goals (Optional)
+## Phase 11: Stretch Goals
 
 **Description:** Implement advanced features based on project priorities.
 **Dependencies:** Stable core system (Phases 1-6, 8, 9, 7).
 
-### Subtask 10.1: FastAPI + Gradio UI Server (`server.py`)
+### Subtask 11.1: FastAPI + Gradio UI Server (`server.py`)
 - **Instructions:**
     - [ ] Set up a basic FastAPI server.
     - [ ] Create endpoints to:
@@ -344,13 +350,13 @@ This document breaks down the FicWorld project into manageable subtasks, providi
     - [ ] Integrate Gradio UI to interact with these endpoints.
     - [ ] (Advanced) Allow live pausing, inspecting agent states, injecting director notes.
 
-### Subtask 10.2: Critic/Editor Agent
+### Subtask 11.2: Critic/Editor Agent
 - **Instructions:**
     - [ ] Design prompts for a critic agent.
     - [ ] Implement logic for the critic agent to review narrator output or simulation consistency.
     - [ ] Determine how critic feedback is incorporated (e.g., re-prompting narrator, flagging issues).
 
-### Subtask 10.3: Tool-Calling for Agents (e.g., via AutoGen or custom)
+### Subtask 11.3: Tool-Calling for Agents (e.g., via AutoGen or custom)
 - **Instructions:**
     - [ ] Define potential tools (e.g., knowledge lookup, image generation).
     - [ ] Modify `CharacterAgent.plan` or add a new method to support tool use.

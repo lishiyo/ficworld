@@ -1,5 +1,26 @@
 # Progress
 
+Date: Sat May 10 18:50:00 PDT 2025
+
+## Changes Since Last Update
+- **Phase 6: Simulation Loop Orchestration (`main.py`) Completed:**
+  - Successfully implemented the full simulation loop in `main.py`.
+  - All core components (`ConfigLoader`, `LLMInterface`, `MemoryManager`, `WorldAgent`, `CharacterAgent`s, `Narrator`) are instantiated and orchestrated as per the design in `systemPatterns.md`.
+  - The simulation now runs end-to-end, processing scenes and turns, with characters reflecting and planning, the world agent managing state and events, and the narrator generating prose.
+  - Story output (`story.md`) and detailed simulation logs (`simulation_log.jsonl`) are being correctly generated in the `outputs/` directory.
+
+## Errors Encountered and Learnings
+- **Performance of Full Loop:** Initial runs of the complete simulation loop highlight that the process is quite time-consuming. This is attributed to the large number of sequential LLM calls made during each scene (estimated at 70-80 calls for a 10-turn scene, as analyzed previously).
+- **Learning:** While the LLM-driven approach offers great flexibility and potential for emergent narratives, optimizing the number of LLM calls or exploring parallelization where feasible will be important for practical usability and faster iteration cycles.
+
+## Next Steps Planned
+- **Analyze and Improve Story Generation:** Focus on enhancing the quality of the generated stories and the performance of the current "free" mode simulation loop.
+- **Address Async Test Warnings:** Resolve any remaining `RuntimeWarning` or `DeprecationWarning` messages related to `async` test methods in `test_character_agent.py`.
+- **Phase 8: Script Mode and Beats Implementation:** Begin work on allowing the simulation to follow predefined narrative beats for more guided storytelling.
+
+---
+# Progress
+
 Date: Fri May 10 00:25:00 PDT 2025
 
 ## Changes Since Last Update
@@ -106,4 +127,60 @@ Date: Fri May  9 22:11:12 PDT 2025
 
 ## Next Steps Planned
 - **Phase 3: Character Agent Implementation:**
-  - Define `
+  - Define `CharacterAgent` class in `modules/character_agent.py`
+  - Implement core methods: `__init__`, `reflect()`, and `plan()`
+  - Write unit tests for `CharacterAgent`
+
+Date: Fri May  9 22:11:12 PDT 2025
+
+## Changes Since Last Update
+- **Unit Tests for LLM Interface and Memory Manager (Phase 2 Completed):**
+  - Implemented comprehensive unit tests for `LLMInterface` in `tests/test_llm_interface.py`, covering:
+    - Successful initialization and API key handling
+    - Text and JSON response generation (both async and sync methods)
+    - Error handling for API errors and JSON parsing failures
+    - Heuristic JSON parsing for responses
+  - Implemented comprehensive unit tests for `MemoryManager` in `tests/test_memory.py`, covering:
+    - Initialization and memory store management
+    - Memory creation and storage (LTM and STM)
+    - Memory retrieval (MVP implementation)
+    - Scene summarization (MVP concatenation)
+    - Memory clearing and resetting operations
+  - Fixed a test issue in `test_summarise_scene_mvp` related to newline character representation in expected vs. actual output
+
+## Errors Encountered and Learnings
+- **Newline Character Representation in Tests:** When testing string equality with newline characters, we discovered that using escaped newlines (`\\n`) in the expected string created a mismatch with actual newlines (`\n`) in the output. This is because the escape sequence `\\n` in a string literal becomes a literal backslash followed by 'n' in the actual string, not a newline character.
+- **Learning:** When writing tests involving multi-line strings, be careful with string literal representation, especially for special characters like newlines. Use raw strings (`r"..."`) or actual newline characters as appropriate for expected values.
+
+## Next Steps Planned
+- **Phase 3: Character Agent Implementation:**
+  - Define `CharacterAgent` class in `modules/character_agent.py`
+  - Implement core methods: `__init__`, `reflect()`, and `plan()`
+  - Write unit tests for `CharacterAgent`
+
+Date: Fri May  9 22:11:12 PDT 2025
+
+## Changes Since Last Update
+- **Unit Tests for LLM Interface and Memory Manager (Phase 2 Completed):**
+  - Implemented comprehensive unit tests for `LLMInterface` in `tests/test_llm_interface.py`, covering:
+    - Successful initialization and API key handling
+    - Text and JSON response generation (both async and sync methods)
+    - Error handling for API errors and JSON parsing failures
+    - Heuristic JSON parsing for responses
+  - Implemented comprehensive unit tests for `MemoryManager` in `tests/test_memory.py`, covering:
+    - Initialization and memory store management
+    - Memory creation and storage (LTM and STM)
+    - Memory retrieval (MVP implementation)
+    - Scene summarization (MVP concatenation)
+    - Memory clearing and resetting operations
+  - Fixed a test issue in `test_summarise_scene_mvp` related to newline character representation in expected vs. actual output
+
+## Errors Encountered and Learnings
+- **Newline Character Representation in Tests:** When testing string equality with newline characters, we discovered that using escaped newlines (`\\n`) in the expected string created a mismatch with actual newlines (`\n`) in the output. This is because the escape sequence `\\n` in a string literal becomes a literal backslash followed by 'n' in the actual string, not a newline character.
+- **Learning:** When writing tests involving multi-line strings, be careful with string literal representation, especially for special characters like newlines. Use raw strings (`r"..."`) or actual newline characters as appropriate for expected values.
+
+## Next Steps Planned
+- **Phase 3: Character Agent Implementation:**
+  - Define `CharacterAgent` class in `modules/character_agent.py`
+  - Implement core methods: `__init__`, `reflect()`, and `plan()`
+  - Write unit tests for `CharacterAgent`
