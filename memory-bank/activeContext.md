@@ -1,47 +1,42 @@
 # Active Context
 
-Date: Sat May 10 18:50:00 PDT 2025
+Date: Tue May 13 00:11:04 PDT 2025
 
 ## Current Work Focus
-- **Completed Phase 6: Full simulation loop in `main.py` is now operational.**
-- Previous phases (1-5) addressing core setup, data structures, LLM interface, memory manager, character agents, world agent, and narrator are also complete.
+- **Implementing FicWorld V1 Architecture - Phase 7: V1 Improvements - Part 1**
+  - Subtask 7.1 (Enhance Character Data & Loading) is largely complete: V1 `CharacterConfig` model created, example V1 role JSON added, `ConfigLoader` updated for V1 roles, and `CharacterAgent.__init__` adapted for `CharacterConfig`.
+  - Subtask 7.2 (Enhance Agent Prompts) is in progress: `CharacterAgent` prompt helper methods (`_prepare_character_system_prompt`, `_prepare_reflection_prompt`, `_prepare_plan_prompt`) and `Narrator.render()` have been updated to incorporate V1 design elements and prepare for V1 contexts.
+  - About to start Subtask 7.3 (Implement Relationship Manager - Basic).
 
 ## What's Working
-- **End-to-End Simulation:** The full simulation loop in `main.py` runs successfully, orchestrating all core components.
-- **Component Functionality:**
-    - `ConfigLoader` correctly loads presets, world definitions, and role archetypes.
-    - `LLMInterface` successfully interacts with the configured LLM (OpenRouter).
-    - `CharacterAgent`s perform their `reflect` (private thought, mood update) and `plan` (public action) cycles.
-    - `WorldAgent` manages scene progression, turn order, applies character plans to generate factual outcomes, injects world events, and updates the `world_state` (including character states and environmental details) based on these outcomes.
-    - `Narrator` renders the factual outcomes from each scene into narrative prose from a chosen character's point of view.
-    - `MemoryManager` (MVP in-memory version) stores and retrieves memories for characters and performs basic scene summarization.
-- **Output Generation:** The system generates `story.md` with the narrated prose and `simulation_log.jsonl` with detailed turn-by-turn events.
+- **V1 Data Model:** `CharacterConfig` Pydantic model defined in `modules/data_models.py`.
+- **V1 Example Role:** `data/roles/lacia_eldridge_v1.json` created and conforms to `CharacterConfig`.
+- **V1 Config Loading (Partial):** `modules/config_loader.py` now has `load_character_config_v1` for loading V1 role files.
+- **V1 Character Agent Init:** `modules/character_agent.py` correctly initializes with `CharacterConfig`, storing `full_name`, `backstory`, and structured `initial_goals`.
+- **V1 Prompt Helpers (Initial Updates):** `CharacterAgent` prompt helpers and `Narrator.render` have been updated to reflect V1 prompt designs from `memory-bank/v1/prompt_design.md`, using new V1 fields and preparing for richer V1 contexts (like subjective views, relationship context, plot context) with fallbacks.
+- **V1 Narrator Style:** `Narrator.render()` now accepts an `author_style` parameter.
 
 ## What's Broken / To Be Implemented / Needs Improvement
-- **Performance:** The most significant current issue is the slow execution speed of the simulation. This is primarily due to the high number of sequential LLM calls made within each scene (potentially 70-80 calls for a 10-turn scene).
-- **Story Quality & Depth:** (General placeholder) While the loop works, ongoing refinement of prompts and logic will be needed to enhance narrative coherence, character depth, and overall story engagement.
-- **Advanced Memory (Phase 7):** Vector store integration for LTM and full Emotional RAG implementation are pending.
-- **Script Mode (Phase 8):** Full implementation and testing of `script_beats` functionality to guide the narrative are pending.
-- **Comprehensive Testing (Phase 9):** While unit tests for individual modules are largely in place, more extensive integration testing of the full loop with diverse scenarios is needed.
-- **Async Test Warnings:** Remaining `RuntimeWarning` and `DeprecationWarning` messages for `async` test methods in `test_character_agent.py` need to be addressed.
+- **Unit Tests:** Unit tests for the V1 changes made in Subtask 7.1 and 7.2 (`CharacterConfig`, `ConfigLoader.load_character_config_v1`, `CharacterAgent` updates, `Narrator` updates) are planned but not yet implemented.
+- **Full V1 Context Integration:** The prompt helper methods in `CharacterAgent` are structured for V1 contexts (subjective view, plot, relationships), but the actual data for these contexts is not yet being piped through from their respective V1 managers (`PerspectiveFilter`, `PlotManager`, `RelationshipManager`) as these are not yet implemented or fully integrated.
+- **`load_full_preset` in `ConfigLoader`:** Needs to be updated to handle loading V1 `CharacterConfig` files alongside or instead of V0 `RoleArchetype` files, based on preset specifications.
+- **Performance:** (Carried over from previous context) Performance of the overall simulation loop remains a concern due to sequential LLM calls.
 
 ## Active Decisions and Considerations
-- **Priority: Performance and Quality:** Before moving to more advanced features like Phase 7 (Advanced Memory) or fully implementing Phase 8 (Script Mode), the immediate focus should be on improving the performance of the current simulation loop and the quality of the generated narrative in "free" mode.
-- **Strategies for Performance:** Investigate methods to reduce the number of LLM calls per scene, batch calls where possible (if applicable), or explore if any decision points can be handled heuristically or with less computationally intensive models without sacrificing too much quality.
-- **Prompt Refinement:** Continuously iterate on prompts for all agents to improve the logical consistency and creativity of their outputs.
+- **V1 Focus:** Proceeding with V1 implementation, prioritizing new architecture over V0 backward compatibility.
+- **Iterative Prompt Enhancement:** Prompts will continue to be refined as V1 managers (PerspectiveFilter, PlotManager, RelationshipManager) are implemented and integrated, providing richer context to the agents.
+- **Deferred Unit Testing:** Unit test implementation for recent changes is deferred temporarily to maintain momentum on feature implementation, but will be addressed.
 
 ## Important Patterns and Preferences
-- Adherence to design documents: `systemPatterns.md`, `prd.md`, `tasks.md`, `prompt_design.md`, `memory_strategy.md`.
+- Adherence to V1 design documents: `memory-bank/v1/systemPatterns.md`, `memory-bank/v1/tasks.md`, `memory-bank/v1/prompt_design.md`.
 - Modular design with clear separation of concerns.
-- Use of Python dataclasses for core data structures.
-- Configuration-driven approach for simulations, including LLM settings, world parameters, and agent behaviors.
-- Comprehensive unit testing for each component, with a growing need for robust integration tests.
-- Prioritization of LLM-driven emergent behavior, balanced with the need for performance and narrative coherence.
+- Pydantic for data modeling.
 
 ## Learnings and Project Insights
-- **LLM Orchestration Complexity:** Successfully orchestrating a multi-agent system with numerous interdependent LLM calls for a full simulation loop is complex. Each agent's output influences the next, and managing state consistency while allowing for emergence is a key challenge.
-- **Impact of Sequential LLM Calls:** The current architecture, with many sequential LLM calls per turn, directly impacts overall simulation speed. This highlights a common challenge in complex AI agent systems.
-- **Value of Detailed Logging:** The `simulation_log.jsonl` is invaluable for debugging the intricate interactions and decision-making processes of the agents and the world.
+- **Codebase Awareness:** The initial oversight of existing `ConfigLoader` underscores the need for careful codebase exploration before adding new modules, especially in larger projects.
+- **Phased V1 Context Integration:** Updating prompts to *accept* V1-style context parameters (even with fallbacks) before the data sources are fully ready allows for smoother integration later.
 
 ## Current Database/Model State
-- N/A (No persistent database is in use yet; memory is in-memory for MVP).
+- New Pydantic model `CharacterConfig` introduced in `modules/data_models.py`.
+- Example V1 role file `data/roles/lacia_eldridge_v1.json` created.
+- No persistent database in use.

@@ -11,6 +11,7 @@ from .models import (
     Preset, WorldDefinition, RoleArchetype, Location, ScriptBeat, 
     WorldEvent, GlobalLore, FactionInfo, LLMSettings
 )
+from .data_models import CharacterConfig
 from .ficworld_config import LLM_MODEL_NAME, LLM_MAX_TOKENS # Import defaults
 
 
@@ -208,6 +209,27 @@ class ConfigLoader:
             icon=role_data.get('icon')
         )
     
+    def load_character_config_v1(self, role_file_name: str) -> CharacterConfig:
+        """
+        Loads a V1 character configuration JSON file and parses it into a CharacterConfig object.
+        Expects role_file_name to be relative to the 'data/roles/' directory, 
+        e.g., 'lacia_eldridge_v1.json'.
+        """
+        # Ensure .json extension, similar to other loaders in this class
+        if not role_file_name.endswith('.json'):
+            role_file_name += '.json'
+
+        # Get the bare filename, removing potential directory prefixes
+        # This matches the pattern in load_role_archetype
+        bare_role_file_name = role_file_name.split('/')[-1]
+        
+        file_path = self.roles_dir / bare_role_file_name
+        
+        # Re-using the existing load_json method for consistency
+        role_data = self.load_json(file_path) 
+        
+        return CharacterConfig(**role_data)
+    
     def load_full_preset(self, preset_name: str) -> Dict[str, Any]:
         """
         Load a preset and all its associated world and role files.
@@ -220,6 +242,11 @@ class ConfigLoader:
         """
         preset = self.load_preset(preset_name)
         world = self.load_world_definition(preset.world_file)
+        
+        # TODO: Differentiate or manage loading V0 RoleArchetypes vs V1 CharacterConfigs
+        # For now, continuing with V0 RoleArchetype loading as per existing structure.
+        # V1 CharacterConfig loading would likely use a different key in the preset,
+        # e.g., "character_config_files" and call self.load_character_config_v1
         roles = [self.load_role_archetype(role_file) for role_file in preset.role_files]
         
         return {

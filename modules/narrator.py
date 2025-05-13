@@ -1,5 +1,6 @@
 from .llm_interface import LLMInterface
 from .ficworld_config import DEFAULT_NARRATOR_LITERARY_TONE, DEFAULT_NARRATOR_TENSE_INSTRUCTIONS
+from typing import Optional
 # Potentially import data classes for scene_log items and pov_character_info if defined elsewhere
 # from .models import LogEntry, CharacterPublicInfo # Example
 
@@ -17,7 +18,7 @@ class Narrator:
         """
         self.llm_interface = llm_interface
 
-    def render(self, scene_log: list, pov_character_name: str, pov_character_info: dict) -> str:
+    def render(self, scene_log: list, pov_character_name: str, pov_character_info: dict, author_style: Optional[str] = None) -> str:
         """Renders a scene's log into narrative prose from a specific character's POV.
 
         Args:
@@ -27,6 +28,7 @@ class Narrator:
             pov_character_name: The name of the character from whose perspective the scene is narrated.
             pov_character_info: A dictionary containing persona, goals, and mood of the POV character.
                                 e.g., {"persona": "Summary of persona", "goals": ["Goal 1", "Goal 2"], "mood": {"joy": 0.1, ...}}
+            author_style: Optional string describing the desired authorial style (e.g., "Ernest Hemingway", "Jane Austen").
 
         Returns:
             A string containing the narrative prose for the scene.
@@ -35,17 +37,20 @@ class Narrator:
         tense_instructions = DEFAULT_NARRATOR_TENSE_INSTRUCTIONS
         pov_instructions = f"third-person limited perspective, focusing on {pov_character_name}"
         desired_literary_tone = DEFAULT_NARRATOR_LITERARY_TONE
+        
+        author_style_instruction = f"- Emulate the literary writing style of: {author_style}." if author_style else "- Write in a clear, engaging, standard literary style."
 
         system_prompt = f"""
         You are a masterful storyteller and narrator for FicWorld. Your task is to transform a log of events and actions into engaging narrative prose.
 
         **Style Guidelines:**
         - Write in {tense_instructions}.
-        - Use {pov_instructions}.
-        - Strictly adhere to the "show, don't tell" principle. Describe emotions and thoughts through actions, dialogue delivery, and sensory details rather than stating them directly.
-        - Weave in environmental details and character reactions naturally.
+        - Use {pov_instructions}, focusing strictly on the designated Point-of-View (POV) character for the current scene. All thoughts, feelings, and perceptions should be filtered through them.
+        {author_style_instruction}
+        - Strictly adhere to the "show, don't tell" principle. Describe emotions and thoughts through actions, dialogue delivery, and sensory details from the POV character's experience, rather than stating them directly.
+        - Weave in environmental details and character reactions naturally, as perceived by the POV character.
         - The desired literary tone is: {desired_literary_tone}.
-        - Do NOT simply list events or repeat dialogue verbatim from the log. Narrate them vividly.
+        - Do NOT simply list events or repeat dialogue verbatim from the log. Narrate them vividly from the POV.
         - Do NOT speak as an AI, break the fourth wall, or add meta-commentary. Write it like a passage from a novel.
         """
 
@@ -84,7 +89,7 @@ class Narrator:
         **Scene Log (Factual Outcomes):**
 {formatted_scene_log.strip()}
 
-        Rewrite this log as a coherent and engaging prose passage, strictly adhering to the established narrative style and focusing on {pov_character_name}'s limited perspective. Draw upon their persona and mood to enrich the descriptions of their actions, perceptions, and internal reactions (implied, not stated).
+        Rewrite this log as a coherent and engaging prose passage, strictly adhering to the established narrative style (including author style if provided) and focusing on {pov_character_name}'s limited perspective. Draw upon their persona and mood to enrich the descriptions of their actions, perceptions, and internal reactions (implied, not stated).
         """
 
         messages = [
