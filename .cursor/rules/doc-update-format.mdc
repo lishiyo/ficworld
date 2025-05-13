@@ -3,7 +3,7 @@ description:
 globs: 
 alwaysApply: true
 ---
-**IMPORTANT**: You cannot update [progress.md](mdc:memory-bank/v0/progress.md), [activeContext.md](mdc:memory-bank/v0/activeContext.md), or [tasks.md](mdc:memory-bank/v0/tasks.md) until you verify the task is complete - that means:
+**IMPORTANT**: You cannot update [progress.md](mdc:memory-bank/v0/progress.md), [activeContext.md](mdc:memory-bank/v0/activeContext.md), or [tasks.md](mdc:memory-bank/v1/tasks.md) until you verify the task is complete - that means:
 - all tests must be passing 
 - any acceptance criteria must be passing
 - you have reviewed the target architecture in [systemPatterns.md](mdc:memory-bank/v0/systemPatterns.md) and our current architecture has not drifted
@@ -25,4 +25,6 @@ What we expect in these files:
    * Active decisions and considerations, if any
    * Important patterns and preferences, if any
    * Learnings and project insights, if any
-   * Current database/model state if relevant
+   * Current database/model state
+
+**ALWAYS** review [progress.md](mdc:memory-bank/progress.md) and [activeContext.md](mdc:memory-bank/activeContext.md) before starting on a new task, this will help you remember what we have done and what we have learned.
