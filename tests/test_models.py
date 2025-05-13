@@ -131,7 +131,15 @@ class TestOtherDataModels(unittest.TestCase):
 
     def test_character_state_creation(self):
         mood = MoodVector(joy=0.7)
-        char_state = CharacterState(location="tavern", current_mood=mood, conditions=["weary"])
+        char_state = CharacterState(
+            name="TestCharacter",
+            persona="A test persona.",
+            goals=["Test goal"],
+            activity_coefficient=0.5,
+            location="tavern", 
+            current_mood=mood, 
+            conditions=["weary"]
+        )
         self.assertEqual(char_state.location, "tavern")
         self.assertEqual(char_state.current_mood.joy, 0.7)
         self.assertIn("weary", char_state.conditions)
@@ -147,7 +155,14 @@ class TestOtherDataModels(unittest.TestCase):
 
     def test_world_state_creation(self):
         mood = MoodVector(fear=0.5)
-        char_state = CharacterState(location="forest", current_mood=mood)
+        char_state = CharacterState(
+            name="Alice",
+            persona="Curious",
+            goals=["Explore"],
+            activity_coefficient=0.8,
+            location="forest", 
+            current_mood=mood
+        )
         world_s = WorldState(
             current_scene_id="s1",
             turn_number=1,
@@ -175,12 +190,12 @@ class TestOtherDataModels(unittest.TestCase):
 
     def test_log_entry_creation(self):
         plan_output = CharacterPlanOutput(action="move", details={"target_location": "cave"}, tone_of_action="cautious")
-        mood_action = MoodVector(fear=0.6)
         log = LogEntry(
+            scene=1,
+            turn=1,
             actor="Charlie",
             plan=plan_output,
-            outcome="Charlie moved to the cave.",
-            mood_during_action=mood_action
+            outcome="Charlie moved to the cave."
         )
         self.assertEqual(log.actor, "Charlie")
         self.assertEqual(log.plan.action, "move")

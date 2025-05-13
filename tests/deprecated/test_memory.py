@@ -4,13 +4,14 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 import sys
+from unittest.mock import MagicMock, patch
 
 # Add project root to sys.path if necessary
 if str(Path.cwd().parent) not in sys.path: # Assuming tests are in a 'tests' subdirectory
     sys.path.insert(0, str(Path.cwd().parent))
 
-from modules.memory import MemoryManager
-from modules.models import MoodVector, LogEntry, MemoryEntry # Assuming models.py is in modules
+from modules.memory import MemoryManager, MemoryEntry # Assuming MemoryEntry is in memory.py
+from modules.models import MoodVector, LogEntry # For creating dummy LogEntry objects
 
 class TestMemoryManager(unittest.TestCase):
 

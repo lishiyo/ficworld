@@ -13,3 +13,4 @@ chromadb>=0.4.0
 # Optional UI
 gradio>=3.35.0
 uvicorn>=0.22.0 
+pytest>=8.3.5

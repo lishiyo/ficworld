@@ -2,7 +2,6 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from modules.narrator import Narrator
-from modules.llm_interface import LLMInterface
 from modules.ficworld_config import DEFAULT_NARRATOR_LITERARY_TONE, DEFAULT_NARRATOR_TENSE_INSTRUCTIONS
 
 class TestNarrator(unittest.TestCase):
@@ -117,7 +116,6 @@ class TestNarrator(unittest.TestCase):
         self.mock_llm_interface.generate_response_sync.return_value = {"text": expected_prose, "other_key": "value"}
         prose = self.narrator.render(self.scene_log, self.pov_character_name, self.pov_character_info)
         self.assertEqual(prose, expected_prose)
-
 
 if __name__ == '__main__':
     unittest.main() 

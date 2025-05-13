@@ -6,6 +6,7 @@ from unittest.mock import patch, MagicMock
 import logging
 from pathlib import Path
 import sys
+import json
 
 # Add project root to sys.path if necessary
 if str(Path.cwd()) not in sys.path:
@@ -13,6 +14,7 @@ if str(Path.cwd()) not in sys.path:
 
 from modules.character_agent import CharacterAgent
 from modules.models import RoleArchetype, MoodVector, WorldState
+from modules.data_models import CharacterConfig, InitialGoals # V1 model
 
 
 class TestCharacterAgent(unittest.TestCase):
