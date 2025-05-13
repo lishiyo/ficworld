@@ -66,23 +66,44 @@ This plan outlines the subtasks for implementing the V1 architecture, integratin
 
 ### Subtask 7.5: Define Subjective Data Structures
 - **Instructions:**
-    - [ ] Define `SubjectiveWorldView` data model in `modules/data_models.py` (include perceived location, visible characters/objects with potentially inferred states, perceived events, inferred context).
-    - [ ] Define `SubjectiveEvent` data model (representing a character's filtered perception of an objective `FactualOutcome`).
+    - [ ] In `modules/data_models.py`:
+        - [ ] Define `VisibleCharacterState` (Pydantic model: `character_id`, `estimated_condition: List[str]`, `apparent_mood: Optional[str]`, `observed_action: Optional[str]`).
+        - [ ] Define `VisibleObjectState` (Pydantic model: `object_id`, `observed_state: str`, `perceived_usability: Optional[str]`).
+        - [ ] Define `SubjectiveEvent` (Pydantic model: `timestamp: str`, `observer_id: str`, `perceived_description: str`, `inferred_actor: Optional[str]`, `inferred_target: Optional[str]`).
+        - [ ] Define `SubjectiveWorldView` (Pydantic model: `character_id: str`, `timestamp: str`, `perceived_location_id: str`, `perceived_location_description: str`, `visible_characters: List[VisibleCharacterState]`, `visible_objects: List[VisibleObjectState]`, `recent_perceived_events: List[SubjectiveEvent]`, `inferred_context: str`, `active_focus_or_goal: Optional[str]`).
+    - [ ] Ensure all necessary `typing` imports (e.g., `List`, `Optional`) are present in `modules/data_models.py`.
+    - [ ] Write basic unit tests for these data models in `tests/test_data_models.py` (e.g., instantiation with default values, field assignments).
 
-### Subtask 7.6: Implement Perspective Filter Module
+### Subtask 7.6: Implement Perspective Filter Module (LLM-Based Approach)
 - **Instructions:**
-    - [ ] Create `modules/perspective_filter.py`.
-    - [ ] Define `PerspectiveFilter` class.
-    - [ ] Implement `get_view_for(self, character_id, ground_truth_world_state, memory_manager)`:
-        - [ ] Takes the objective `world_state`.
-        - [ ] Filters based on character's location, senses (start simple, e.g., same location = visible), known facts (requires `memory_manager` access).
-        - [ ] Can use rules initially (e.g., line-of-sight). LLM enhancement is optional later.
-        - [ ] Constructs and returns a `SubjectiveWorldView` instance.
-    - [ ] Implement `get_observers(self, factual_outcome, ground_truth_world_state)`:
-        - [ ] Determines which characters likely perceived the objective `factual_outcome`. Returns a list of character IDs.
-    - [ ] Implement `get_subjective_event(self, observer_id, factual_outcome, ground_truth_world_state)`:
-        - [ ] Generates the `SubjectiveEvent` data for a specific observer based on the objective outcome and their likely perception filters (e.g., hearing vs seeing).
-    - [ ] Write unit tests for `PerspectiveFilter` methods (mocking memory access if needed). Test different scenarios (character locations, obstacles, event types).
+    - [ ] In `modules/perspective_filter.py`:
+        - [ ] Update `PerspectiveFilter.__init__` to accept and store an `LLMInterface` instance (in addition to `MemoryManager`).
+        - [ ] Implement `get_observers(self, factual_outcome: str, ground_truth_world_state: WorldState, event_location_id: Optional[str] = None) -> List[str]`: (LLM-Based)
+            - [ ] Prepare a prompt for the LLM, providing the `factual_outcome`, `ground_truth_world_state` (especially character locations), and the `event_location_id`.
+            - [ ] Instruct the LLM to analyze the scene and event, and return a list of character IDs who likely perceived the event (considering proximity, line of sight, event nature).
+            - [ ] Call the `llm_interface` to get the response.
+            - [ ] Parse the LLM's response (e.g., a JSON list of IDs, or a comma-separated string) into a `List[str]` of character IDs.
+            - [ ] Implement robust parsing and error handling for the LLM response.
+        - [ ] Implement `get_subjective_event(self, observer_id: str, factual_outcome: str, ground_truth_world_state: WorldState, actor_id: Optional[str] = None, target_id: Optional[str] = None) -> SubjectiveEvent`: (LLM-Based)
+            - [ ] Fetch relevant context for the `observer_id` (e.g., their persona, current mood from `ground_truth_world_state.character_states`, relationships with `actor_id`/`target_id` if accessible).
+            - [ ] Prepare a prompt for the LLM, providing the observer's context, the `factual_outcome`, the `ground_truth_world_state`, and `actor_id`/`target_id`.
+            - [ ] Instruct the LLM to re-interpret/rephrase the `factual_outcome` from the observer's specific point of view, considering their biases, what they could physically perceive, and their emotional/relational context. The LLM should generate the fields for the `SubjectiveEvent` model.
+            - [ ] Call the `llm_interface` to get the response (likely JSON matching `SubjectiveEvent` schema).
+            - [ ] Parse the LLM's JSON response into a `SubjectiveEvent` object.
+            - [ ] Implement robust parsing and error handling.
+        - [ ] Implement `get_view_for(self, character_id: str, ground_truth_world_state: WorldState) -> SubjectiveWorldView`: (LLM-Based)
+            - [ ] Fetch relevant context for `character_id` (persona, goals from `ground_truth_world_state.character_states[character_id]`, relevant memories from `self.memory_manager`, current mood from `ground_truth_world_state.character_states[character_id].current_mood`, relationship summaries if accessible).
+            - [ ] Prepare a prompt based on `prompt_design.md#PERSPECTIVE_FILTER_INFERENCE`, providing all character context and the `ground_truth_world_state`.
+            - [ ] Instruct the LLM to generate a complete JSON object matching the `SubjectiveWorldView` schema, inferring visibility, perceived states, and overall context.
+            - [ ] Call the `llm_interface` to get the JSON response.
+            - [ ] Parse the LLM's JSON response into a `SubjectiveWorldView` object.
+            - [ ] Implement robust parsing and error handling.
+    - [ ] Create `tests/test_perspective_filter.py`.
+    - [ ] Write unit tests for `PerspectiveFilter` methods:
+        - [ ] Mock `llm_interface` and `memory_manager`.
+        - [ ] For each method, verify correct prompt construction based on varied inputs.
+        - [ ] Verify correct parsing of mocked LLM JSON responses into the expected Pydantic objects (`SubjectiveWorldView`, `List[str]` for observers, `SubjectiveEvent`).
+        - [ ] Test error handling for malformed LLM responses or API errors.
 
 ### Subtask 7.7: Refactor WorldAgent for Ground Truth
 - **Instructions:**
