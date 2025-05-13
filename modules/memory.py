@@ -180,4 +180,44 @@ class MemoryManager:
         self.ltm_store = []
         self.stm = {}
         self.scene_summaries = {}
-        print("All memories (LTM, STM, Scene Summaries) have been reset.") 
+        print("All memories (LTM, STM, Scene Summaries) have been reset.")
+
+    def get_short_term_memories(self, actor_name: str, limit: int = 10) -> List[MemoryEntry]:
+        return self.stm.get(actor_name, [])[-limit:]
+
+    def get_recent_scene_summaries(self, count: int = 3, for_character_id: Optional[str] = None) -> str:
+        """
+        Retrieves a concatenated string of the most recent scene summaries.
+
+        Args:
+            count: The number of most recent scene summaries to retrieve.
+            for_character_id: Optional. If provided, future versions might filter summaries 
+                              based on character involvement or knowledge.
+                              For now, it's a placeholder for V1 subjectivity.
+
+        Returns:
+            A string containing the recent scene summaries, or a note if none are available.
+        """
+        if not self.scene_summaries:
+            return "No scene summaries are available yet."
+
+        # Sort scene numbers in descending order to get the most recent ones
+        sorted_scene_numbers = sorted(self.scene_summaries.keys(), reverse=True)
+        
+        num_to_fetch = min(count, len(sorted_scene_numbers))
+        if num_to_fetch == 0:
+            return "No scene summaries are available yet."
+
+        summaries_text = []
+        for i in range(num_to_fetch):
+            scene_num = sorted_scene_numbers[i]
+            summary = self.scene_summaries[scene_num]
+            summaries_text.append(f"Summary of Scene {scene_num}:\n{summary}")
+        
+        return "\n\n---\n\n".join(reversed(summaries_text)) # Show oldest of N first
+
+    # --- LTM (Vector Store) Methods (Placeholders for Phase 7) ---
+    def _ensure_vector_store_loaded(self):
+        # This method is a placeholder for future implementations.
+        # It should be implemented to load the vector store if needed.
+        pass 

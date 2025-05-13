@@ -68,7 +68,13 @@ class CharacterAgent:
         
         logging.info(f"Character Agent '{self.full_name}' initialized with mood: {self.current_mood}")
         
-    async def reflect(self, world_state: WorldState, relevant_memories: List[Any]) -> ReflectionOutput:
+    async def reflect(
+        self, 
+        world_state: WorldState, 
+        relevant_memories: List[Any],
+        relationship_context: Optional[str] = None, # V1 ADDED
+        scene_summary_context: Optional[str] = None # V1 ADDED (placeholder for now)
+    ) -> ReflectionOutput:
         """
         First step of the two-step thinking process: private reflection and mood update.
         
@@ -79,18 +85,31 @@ class CharacterAgent:
         Args:
             world_state: The current state of the simulation world.
             relevant_memories: List of relevant MemoryEntry objects for this character.
+            relationship_context: Optional string summary of character's relationships.
+            scene_summary_context: Optional string summary of recent scenes.
             
         Returns:
             A ReflectionOutput object containing the updated mood and internal thought.
         """
         # Prepare the system prompt for reflection
+        # V1 Note: relationship_context is passed to system prompt for overall character definition
         system_prompt = self._prepare_character_system_prompt(
             relevant_memories=relevant_memories,
-            world_state=world_state
+            world_state=world_state, # world_state provides general context for system prompt
+            relationship_summary_context=relationship_context,
+            scene_summary_context=scene_summary_context
         )
         
         # Prepare the user prompt with world state and memories context
-        user_prompt = self._prepare_reflection_prompt(world_state, relevant_memories)
+        # V1 Note: specific V1 contexts (subjective view, plot, relationships) are passed here.
+        # For now, passing relationship_context. Subjective view & plot context would come from WorldAgent/SimulationManager later.
+        user_prompt = self._prepare_reflection_prompt(
+            world_state, 
+            relevant_memories, 
+            relationship_context_str=relationship_context,
+            # scene_summary_context could be part of subjective_world_view or a separate context here
+            # plot_context_str=plot_context # This would be passed in from a higher orchestrator
+        )
         
         try:
             # Call the LLM with json_mode=True to get structured output
@@ -135,7 +154,13 @@ class CharacterAgent:
                 internal_thought=f"[Error processing reflection: {str(e)}]"
             )
     
-    def _prepare_character_system_prompt(self, relevant_memories=None, world_state=None, relationship_summary_context: Optional[str] = None) -> str:
+    def _prepare_character_system_prompt(
+        self, 
+        relevant_memories=None, 
+        world_state=None, 
+        relationship_summary_context: Optional[str] = None,
+        scene_summary_context: Optional[str] = None # V1 ADDED
+    ) -> str:
         """
         Prepare the CHARACTER_SYSTEM prompt for this character, V1 focused.
         
@@ -143,6 +168,7 @@ class CharacterAgent:
             relevant_memories: A list of relevant memory entries (optional).
             world_state: The current world state (optional, for context like location).
             relationship_summary_context: A string summarizing key relationships (optional, V1 feature).
+            scene_summary_context: Optional string summary of recent scenes (V1 feature).
             
         Returns:
             The system prompt string.
@@ -171,6 +197,7 @@ class CharacterAgent:
         mood_json_str = json.dumps(self.current_mood.__dict__) # Assuming MoodVector has __dict__ or similar
 
         relationship_str = relationship_summary_context if relationship_summary_context else "No specific relationship context available."
+        scenes_summary_str = scene_summary_context if scene_summary_context else "No summaries of recent major events available."
 
         # Aligning with memory-bank/v1/prompt_design.md for CHARACTER_SYSTEM
         prompt = f"""You are {self.full_name}.
@@ -190,7 +217,10 @@ class CharacterAgent:
 **Key Personal Memories (Recollections):**
 {memory_summary_str}
 
-You must always act, speak, and think internally in accordance with this identity (your persona, backstory), your specific goals, your current emotions, and your relationships.
+**Summaries of Recent Major Events (Plot Context):**
+{scenes_summary_str}
+
+You must always act, speak, and think internally in accordance with this identity (your persona, backstory), your specific goals, your current emotions, your relationships, and your understanding of recent events.
 """
         return prompt
     
@@ -285,7 +315,9 @@ This reflection is for your internal state ONLY. Do NOT reveal the specifics of 
         self, 
         world_state: WorldState, 
         relevant_memories: List[Any], 
-        internal_thought_summary: str
+        internal_thought_summary: str,
+        relationship_context: Optional[str] = None, # V1 ADDED
+        scene_summary_context: Optional[str] = None # V1 ADDED (placeholder for now)
     ) -> CharacterPlanOutput:
         """
         Second step of the two-step thinking process: public action planning.
@@ -298,18 +330,31 @@ This reflection is for your internal state ONLY. Do NOT reveal the specifics of 
             world_state: The current state of the simulation world.
             relevant_memories: List of relevant MemoryEntry objects for this character.
             internal_thought_summary: Summary of the character's private reflection.
+            relationship_context: Optional string summary of character's relationships.
+            scene_summary_context: Optional string summary of recent scenes.
             
         Returns:
             A CharacterPlanOutput object.
         """
         # Prepare the system prompt for planning
+        # V1 Note: relationship_context is passed to system prompt for overall character definition
         system_prompt = self._prepare_character_system_prompt(
             relevant_memories=relevant_memories,
-            world_state=world_state
+            world_state=world_state,
+            relationship_summary_context=relationship_context,
+            scene_summary_context=scene_summary_context
         )
         
         # Prepare the user prompt for planning
-        user_prompt = self._prepare_plan_prompt(world_state, relevant_memories, internal_thought_summary)
+        # V1 Note: specific V1 contexts (subjective view, plot, relationships) are passed here.
+        user_prompt = self._prepare_plan_prompt(
+            world_state, 
+            relevant_memories, 
+            internal_thought_summary,
+            relationship_context_str=relationship_context,
+            # scene_summary_context could be part of subjective_world_view or a separate context here
+            # plot_context_str=plot_context # This would be passed in from a higher orchestrator
+        )
         
         try:
             # Call the LLM with json_mode=True to get structured output
@@ -451,12 +496,18 @@ Be creative yet grounded in your character and subjective understanding.
     
     # Synchronous versions for simpler usage scenarios
     
-    def reflect_sync(self, world_state: WorldState, relevant_memories: List[Any]) -> ReflectionOutput:
+    def reflect_sync(
+        self, 
+        world_state: WorldState, 
+        relevant_memories: List[Any],
+        relationship_context: Optional[str] = None, # V1 ADDED
+        scene_summary_context: Optional[str] = None # V1 ADDED
+    ) -> ReflectionOutput:
         """Synchronous wrapper for reflect()."""
         import asyncio
         loop = asyncio.new_event_loop()
         try:
-            return loop.run_until_complete(self.reflect(world_state, relevant_memories))
+            return loop.run_until_complete(self.reflect(world_state, relevant_memories, relationship_context, scene_summary_context))
         finally:
             loop.close()
     
@@ -464,14 +515,16 @@ Be creative yet grounded in your character and subjective understanding.
         self, 
         world_state: WorldState, 
         relevant_memories: List[Any], 
-        internal_thought_summary: str
+        internal_thought_summary: str,
+        relationship_context: Optional[str] = None, # V1 ADDED
+        scene_summary_context: Optional[str] = None # V1 ADDED
     ) -> CharacterPlanOutput:
         """Synchronous wrapper for plan()."""
         import asyncio
         loop = asyncio.new_event_loop()
         try:
             return loop.run_until_complete(
-                self.plan(world_state, relevant_memories, internal_thought_summary)
+                self.plan(world_state, relevant_memories, internal_thought_summary, relationship_context, scene_summary_context)
             )
         finally:
             loop.close() 

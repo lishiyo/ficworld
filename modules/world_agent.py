@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 import json
 
 from .models import WorldDefinition, WorldState, CharacterState, MoodVector
+from .llm_interface import LLMInterface
+from .relationship_manager import RelationshipManager, RelationshipState
 
 
 class WorldAgent:
@@ -15,8 +17,9 @@ class WorldAgent:
     def __init__(
         self, 
         world_definition: WorldDefinition, 
-        llm_interface, 
+        llm_interface: LLMInterface, 
         character_states: Dict[str, CharacterState],
+        relationship_manager: RelationshipManager,
         max_scene_turns: int = 20,
         stagnation_detection_threshold: int = 3,
         llm_event_injection_override_chance: float = 0.05,
@@ -30,6 +33,7 @@ class WorldAgent:
             world_definition: The WorldDefinition object containing world settings, locations, etc.
             llm_interface: The LLMInterface object for generating events (if used)
             character_states: Dictionary mapping character names to their data, including activity coefficients
+            relationship_manager: The RelationshipManager object for managing character relationships
             max_scene_turns: Maximum turns before a scene is forced to end.
             stagnation_detection_threshold: Number of turns with minimal change to trigger stagnation in fallback.
             llm_event_injection_override_chance: Chance to inject event even if LLM says no.
@@ -39,6 +43,7 @@ class WorldAgent:
         self.world_definition = world_definition
         self.llm_interface = llm_interface
         self.character_states_initial_template = character_states
+        self.relationship_manager = relationship_manager
 
         # Configurable parameters
         self.max_scene_turns = max_scene_turns
@@ -540,6 +545,55 @@ class WorldAgent:
             
             return selected_actor, char_state
     
+    def _interpret_outcome_for_relationship_update(
+        self, 
+        actor_name: str, 
+        factual_outcome: str, 
+        involved_characters: List[str]
+    ) -> List[Dict[str, Any]]:
+        """
+        Placeholder: Interprets factual_outcome to determine relationship changes.
+        In a full V1 implementation, this would use an LLM call with RELATIONSHIP_UPDATE_INTERPRETATION prompt.
+        Returns a list of relationship adjustments, e.g.:
+        [{"char_pair": ["Alice", "Bob"], "trust_delta": 0.1, "affinity_delta": 0.05, "new_status": "allies"}, ...]
+        """
+        # logging.info(f"WORLD_AGENT_DEBUG: Interpreting outcome for relationships: '{factual_outcome}' involving {involved_characters}")
+        # This is a very basic placeholder. A real version needs LLM or complex heuristics.
+        updates = []
+        if not involved_characters or len(involved_characters) < 2:
+            # If action doesn't clearly involve another, or only involves the actor.
+            # For self-talk or environment interaction, typically no direct relationship change with OTHERS.
+            return updates
+
+        # Example: If outcome mentions "helps" or "praises" target, increase trust/affinity from actor to target.
+        # If outcome mentions "attacks" or "insults" target, decrease trust/affinity.
+        
+        # Placeholder logic: assumes outcome primarily affects actor and first other involved character
+        # This needs to be much more sophisticated.
+        char_b_id = None
+        for char_id in involved_characters:
+            if char_id != actor_name:
+                char_b_id = char_id
+                break
+        
+        if char_b_id:
+            # Extremely simplified placeholder logic
+            if "helps" in factual_outcome.lower() or "thanks" in factual_outcome.lower():
+                updates.append({
+                    "char_pair": sorted([actor_name, char_b_id]), # Use sorted for consistent key lookup if manager needs it
+                    "trust_delta": 0.05,
+                    "affinity_delta": 0.02
+                })
+            elif "attacks" in factual_outcome.lower() or "insults" in factual_outcome.lower():
+                updates.append({
+                    "char_pair": sorted([actor_name, char_b_id]),
+                    "trust_delta": -0.1,
+                    "affinity_delta": -0.05
+                })
+        
+        # print(f"WORLD_AGENT_DEBUG: Placeholder relationship updates derived: {updates}")
+        return updates
+
     def apply_plan(self, actor_name: str, plan_json: Dict, current_world_state=None) -> str:
         """
         Apply a character's plan to the world state and generate a factual outcome.
@@ -635,10 +689,10 @@ class WorldAgent:
             )
             
             # Clean up response if needed (remove quotes, extra spaces, etc.)
-            outcome = outcome_response.strip().strip('"\\\'')
+            factual_outcome = outcome_response.strip().strip('"\\\'')
             
-            # Add the outcome to recent events - MOVED to update_from_outcome
-            # current_world_state.recent_events_summary.append(outcome)
+            # Add to recent events - MOVED to update_from_outcome
+            # current_world_state.recent_events_summary.append(factual_outcome)
             
             # Keep recent events list manageable - MOVED to update_from_outcome
             # if len(current_world_state.recent_events_summary) > self.recent_events_history_limit:
@@ -646,7 +700,35 @@ class WorldAgent:
             
             # Location and other state changes will be handled by update_from_outcome
             
-            return outcome
+            # V1: After factual_outcome, interpret for relationship updates
+            # Identify involved characters: actor_name and any mentioned in plan_json details (e.g., target_char_id)
+            involved_for_relations = {actor_name}
+            if plan_json.get("details") and isinstance(plan_json["details"], dict):
+                target_char = plan_json["details"].get("target_char_id") or plan_json["details"].get("target_character") # common keys
+                if target_char and isinstance(target_char, str):
+                    involved_for_relations.add(target_char)
+            
+            # Potentially parse factual_outcome for other mentioned characters (more complex)
+            
+            if len(involved_for_relations) >= 2: # Only update if at least two distinct characters are involved
+                relationship_adjustments = self._interpret_outcome_for_relationship_update(
+                    actor_name, factual_outcome, list(involved_for_relations)
+                )
+                for adj in relationship_adjustments:
+                    pair = adj["char_pair"]
+                    if len(pair) == 2:
+                        # Ensure RelationshipManager handles order of char_pair internally if needed,
+                        # or that _get_relationship_key in RM sorts them.
+                        # Here, assuming RM can take (A,B) or (B,A) if its internal key is frozenset.
+                        self.relationship_manager.adjust_state(
+                            char_a_id=pair[0],
+                            char_b_id=pair[1],
+                            trust_delta=adj.get("trust_delta", 0.0),
+                            affinity_delta=adj.get("affinity_delta", 0.0),
+                            new_status=adj.get("new_status")
+                        )
+            
+            return factual_outcome
             
         except Exception as e:
             # Fallback if LLM call fails
