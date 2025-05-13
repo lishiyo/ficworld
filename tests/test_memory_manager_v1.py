@@ -10,7 +10,7 @@ if str(Path.cwd()) not in sys.path: # If tests are in the root, Path.cwd() is th
     sys.path.insert(0, str(Path.cwd()))
 
 
-from modules.memory import MemoryManager
+from modules.memory_manager import MemoryManager
 from modules.models import LogEntry # For creating dummy LogEntry objects
 
 

@@ -13,7 +13,7 @@ import dataclasses # Added for asdict
 
 from modules.config_loader import ConfigLoader
 from modules.llm_interface import LLMInterface
-from modules.memory import MemoryManager
+from modules.memory_manager import MemoryManager
 from modules.character_agent import CharacterAgent
 from modules.world_agent import WorldAgent
 from modules.narrator import Narrator
