@@ -19,3 +19,5 @@ __pycache__/
 examples/
 .DS_Store
 .cursor/.DS_Store
+.cursor/
+memory-bank/
