@@ -5,5 +5,5 @@ alwaysApply: true
 ---
 We want small, modular, encapsulated files, ALWAYS less than 500 lines. If you are creating a large file OR planning to edit a file to make it longer than 500 lines, STOP CODING and ask me first so we can figure out a better way to design this.
 
-We want to stay strictly to our target architecture in [systemPatterns.md](mdc:memory-bank/v0/systemPatterns.md). Whenever you plan to add new files and components:
-- verify it is in the correct place by comparing it to the target structure in [systemPatterns.md](mdc:memory-bank/v0/systemPatterns.md). If your plan deviates from this structure, DO NOT CODE and ask me first.
+We want to stay strictly to our target architecture in [systemPatterns.md](mdc:memory-bank/v1/systemPatterns.md). Whenever you plan to add new files and components:
+- verify it is in the correct place by comparing it to the target structure in [systemPatterns.md](mdc:memory-bank/v1/systemPatterns.md). If your plan deviates from this structure, DO NOT CODE and ask me first.

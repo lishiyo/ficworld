@@ -124,7 +124,7 @@ This plan outlines the subtasks for implementing the V1 architecture, integratin
     - [ ] Define `PlotStructure` data model in `modules/data_models.py` (Acts, Beats, goals).
     - [ ] Define `NarrativeThread` data model (ID, name, characters, status, summary, associated beats).
     - [ ] Create `data/plot_structures/` directory.
-    - [ ] Create example plot structure JSON/YAML files (e.g., `save_the_cat.json`).
+    - [ ] Create example plot structure JSON/YAML files (e.g., `save_the_cat.json`). If you want to set the beats yourself, then add your own plot structure file here.
     - [ ] Update `Preset` data model to include a `plot_structure_file` field.
     - [ ] Update `ConfigLoader` to load the specified `PlotStructure`.
     - [ ] Write unit tests for plot data models and `ConfigLoader` updates.

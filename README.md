@@ -121,87 +121,113 @@ Outputs, including the generated story (`story.md`) and a detailed simulation lo
 - **Separation of simulation and narration**
 - **Config-driven approach** for reproducible story generation
 
-## Guiding the Narrative with Beats (Script Mode)
+## Guiding the Narrative with Plot Structures (Formerly Script Mode)
 
-FicWorld can operate in two primary modes: "free" mode and "script" mode. While "free" mode allows the story to emerge entirely from agent interactions, "script" mode enables you to guide the narrative using predefined **script beats**.
+FicWorld V1 allows for sophisticated narrative control through a **`PlotManager`** that follows a defined **`PlotStructure`**. This replaces the simpler "script mode" and `script_beats` array from earlier versions, offering a more powerful way to define acts, beats, narrative goals, and character involvement. The `Plotmanager` handles the flow from beat to beat. A single "beat" in the `PlotStructure` might span multiple actual scenes; for instance, the "beat_4_new_allies_enemies" might take 2-3 scenes to fully play out (a scene where they meet an ally, another where they have a minor skirmish).
 
-**What are Script Beats?**
+**What is a Plot Structure?**
 
-Script beats are specific plot points, events, character actions, or emotional shifts that you define to shape the story's progression. They provide a skeleton or outline that the `WorldAgent` attempts to follow, while still allowing `CharacterAgents` to react and fill in the details emergently.
+A Plot Structure is a detailed blueprint for your story, typically defined in a separate JSON or YAML file (e.g., `data/plot_structures/my_epic_adventure.json`). It outlines:
 
-**How to Define Beats:**
+*   **Acts:** Major divisions of your story (e.g., Act I: Setup, Act II: Confrontation, Act III: Resolution).
+*   **Beats:** Specific plot points, events, or emotional shifts within each act. Each beat can have:
+    *   A unique ID and name.
+    *   A description of what should happen.
+    *   Narrative goals (e.g., "Introduce the antagonist," "Protagonist faces a setback").
+    *   Suggestions for key characters involved.
+    *   Setting suggestions.
+    *   Hints for event types that might be triggered.
 
-Script beats are defined within the `worlds/<your_world_name>.json` file, under a `"script_beats"` array. Each beat is an object with properties like:
+**How to Define a Plot Structure:**
+
+Plot Structures are defined in their own files, typically in `data/plot_structures/`. Here's a conceptual snippet (see `memory-bank/v1/systemPatterns.md` for a detailed example):
 
 ```json
-// Inside your data/worlds/your_world.json
+// Example: data/plot_structures/my_epic_adventure.json
 {
-  // ... other world properties ...
-  "script_beats": [
+  "plot_name": "The Quest for the Emberstone",
+  "description": "A three-act adventure to find a legendary artifact.",
+  "acts": [
     {
-      "scene_id": 1, // To which scene this beat belongs or should ideally occur in
-      "beat_id": "introduction_mystery", // A unique identifier for the beat
-      "description": "Characters discover a cryptic map near the old ruins.",
-      "required_location": "old_ruins", // Optional: Beat might only trigger if characters are here
-      "triggers_event": "event_map_discovered", // Optional: Link to a specific event in world_events_pool
-      "target_characters": ["Alice", "Bob"], // Optional: Characters primarily involved or affected
-      "desired_outcome_hint": "Alice should express curiosity, Bob suspicion.", // Optional: A hint for agent behavior
-      "next_beat_suggestion": "investigate_map" // Optional: Hint for sequencing
+      "act_id": "act_1_the_call",
+      "name": "Act I: The Call to Adventure",
+      "beats": [
+        {
+          "beat_id": "beat_1_ordinary_world",
+          "name": "An Ordinary Day",
+          "description": "Introduce the protagonist in their normal setting. Establish the status quo.",
+          "narrative_goals": ["Establish protagonist's daily life", "Hint at an unfulfilled desire or problem"],
+          "key_characters": ["Protagonist"],
+          "setting_suggestions": ["Protagonist's village/home"]
+        },
+        {
+          "beat_id": "beat_2_inciting_incident",
+          "name": "The Catalyst",
+          "description": "An event occurs that disrupts the protagonist's life and presents a challenge or goal.",
+          "narrative_goals": ["Disrupt status quo", "Present the main quest/problem"],
+          "triggers_event_type": "major_disruption"
+        },
+        {
+          "beat_id": "beat_3_refusal_or_acceptance",
+          "name": "The Choice",
+          "description": "The protagonist initially hesitates or eagerly accepts the call.",
+          "narrative_goals": ["Show protagonist's internal conflict/decision process"]
+        }
+      ]
     },
-    {
-      "scene_id": 2,
-      "beat_id": "first_obstacle",
-      "description": "A sudden rockslide blocks the main path forward.",
-      "triggers_event": "event_rockslide"
-    }
-    // ... more beats
+    // more acts...
   ]
-  // ... other world properties ...
 }
 ```
 
-**Key Beat Properties:**
+**Key Plot Structure Properties (within each beat):**
 
-*   `scene_id`: (Integer) Suggests which scene this beat is intended for.
-*   `beat_id`: (String) A unique name for the beat.
-*   `description`: (String) A human-readable description of what should happen.
-*   `required_location`: (String, Optional) The ID of a location where this beat should ideally occur.
-*   `triggers_event`: (String, Optional) The ID of a pre-defined event (from `world_events_pool` in the same world file) that this beat should cause.
-*   `target_characters`: (Array of Strings, Optional) Specifies which characters are central to this beat.
-*   `desired_outcome_hint`: (String, Optional) A textual hint that can guide the LLM (especially the `WorldAgent` or `CharacterAgents`) towards a certain type of reaction or outcome related to this beat.
-*   `next_beat_suggestion`: (String, Optional) Can help the `WorldAgent` in sequencing if multiple beats are eligible.
+*   `beat_id` (String): A unique identifier for the beat.
+*   `name` (String): A human-readable name for the beat.
+*   `description` (String): A detailed description of the intended plot point or event.
+*   `narrative_goals` (Array of Strings): What this beat aims to achieve narratively. Along with the beat's description, these are the primary inputs for the PlotManager to guide the WorldAgent and, through context, the CharacterAgents.
+*   `key_characters` (Array of Strings, Optional): Suggests characters central to this beat.
+*   `setting_suggestions` (Array of Strings, Optional): Hints for where this beat might take place.
+*   `triggers_event_type` (String, Optional): Suggests a type of world event that might occur.
+*   `max_scenes_per_beat` (Int, Optional): the PlotManager might allow a certain number of scenes to occur while a particular beat is active before forcing a move or re-evaluating.
 
-**How to Use Script Mode:**
+**How to Use a Plot Structure:**
 
-1.  **Define Beats in World File:** Add your `script_beats` array to the relevant `data/worlds/<your_world_name>.json` file.
-2.  **Configure Preset:** In your `presets/<your_preset_name>.json` file, set the `"mode"` to `"script"`:
+1.  **Define Your Plot Structure:** Create your `.json` (or `.yaml`) file in `data/plot_structures/`.
+2.  **Configure Your Preset:** In your `presets/<your_preset_name>.json` file, specify your plot structure using the `plot_structure_file` key:
 
     ```json
     // Inside your presets/your_preset.json
     {
-      "world_file": "worlds/your_world_name.json",
-      "role_files": ["roles/character1.json", "roles/character2.json"],
-      "mode": "script", // This activates beat-following behavior
-      "max_scenes": 5,
+      "preset_name": "My Epic Emberstone Adventure",
+      "world_file": "data/worlds/generic_fantasy_world.json",
+      "role_files": [
+        "data/roles/brave_hero.json",
+        "data/roles/wise_mentor.json"
+      ],
+      "plot_structure_file": "data/plot_structures/my_epic_adventure.json", // <-- This activates plot-guided mode
+      "max_scenes_per_beat": 5, // Example: control how many scenes can occur within one beat
       "llm": {
-        "model_name": "deepseek/deepseek-r1:free",
+        "model_name": "deepseek/deepseek-r1:free"
         // ... other llm settings ...
       }
       // ... other preset settings ...
     }
     ```
 
-**How it Works Internally:**
+**How it Works Internally (V1):**
 
-When FicWorld runs in `"script"` mode:
+When a `plot_structure_file` is specified in the preset:
 
-*   The `ConfigLoader` loads the preset and the associated world file, including the `script_beats`.
-*   The `WorldAgent` receives this information. Its internal logic (primarily the LLM-driven methods like `decide_next_actor`, `should_inject_event`, `generate_event`, and `judge_scene_end`) is responsible for:
-    *   Being aware of the current scene and active beats.
-    *   Trying to steer the narrative towards fulfilling the conditions or descriptions of the relevant beats.
-    *   Using beat information (like `triggers_event` or `description`) to influence event generation or to provide context to character agents.
+*   The `ConfigLoader` loads the preset, world, roles, AND the specified `PlotStructure`.
+*   The `SimulationManager` initializes a `PlotManager` with this loaded structure.
+*   The `PlotManager` then guides the entire simulation:
+    *   It dictates the progression through Acts and Beats.
+    *   It provides context to the `WorldAgent` for scene initialization (suggesting relevant characters, settings based on the current beat).
+    *   It influences `WorldAgent` decisions like actor selection and event injection to align with the beat's narrative goals.
+    *   It helps determine when a scene (or beat) is complete and when to select POV characters for narration.
 
-By using script beats, you can create a more structured narrative.
+This V1 approach provides a more powerful and flexible way to create structured narratives compared to the earlier script beat system.
 
 ## License
 
