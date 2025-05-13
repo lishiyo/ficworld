@@ -77,21 +77,21 @@ This plan outlines the subtasks for implementing the V1 architecture, integratin
 ### Subtask 7.6: Implement Perspective Filter Module (LLM-Based Approach)
 - **Instructions:**
     - [ ] In `modules/perspective_filter.py`:
-        - [ ] Update `PerspectiveFilter.__init__` to accept and store an `LLMInterface` instance (in addition to `MemoryManager`).
-        - [ ] Implement `get_observers(self, factual_outcome: str, ground_truth_world_state: WorldState, event_location_id: Optional[str] = None) -> List[str]`: (LLM-Based)
+        - [x] Update `PerspectiveFilter.__init__` to accept and store an `LLMInterface` instance (in addition to `MemoryManager`).
+        - [x] Implement `get_observers(self, factual_outcome: str, ground_truth_world_state: WorldState, event_location_id: Optional[str] = None) -> List[str]`: (LLM-Based)
             - [ ] Prepare a prompt for the LLM, providing the `factual_outcome`, `ground_truth_world_state` (especially character locations), and the `event_location_id`.
             - [ ] Instruct the LLM to analyze the scene and event, and return a list of character IDs who likely perceived the event (considering proximity, line of sight, event nature).
             - [ ] Call the `llm_interface` to get the response.
             - [ ] Parse the LLM's response (e.g., a JSON list of IDs, or a comma-separated string) into a `List[str]` of character IDs.
             - [ ] Implement robust parsing and error handling for the LLM response.
-        - [ ] Implement `get_subjective_event(self, observer_id: str, factual_outcome: str, ground_truth_world_state: WorldState, actor_id: Optional[str] = None, target_id: Optional[str] = None) -> SubjectiveEvent`: (LLM-Based)
+        - [x] Implement `get_subjective_event(self, observer_id: str, factual_outcome: str, ground_truth_world_state: WorldState, actor_id: Optional[str] = None, target_id: Optional[str] = None) -> SubjectiveEvent`: (LLM-Based)
             - [ ] Fetch relevant context for the `observer_id` (e.g., their persona, current mood from `ground_truth_world_state.character_states`, relationships with `actor_id`/`target_id` if accessible).
             - [ ] Prepare a prompt for the LLM, providing the observer's context, the `factual_outcome`, the `ground_truth_world_state`, and `actor_id`/`target_id`.
             - [ ] Instruct the LLM to re-interpret/rephrase the `factual_outcome` from the observer's specific point of view, considering their biases, what they could physically perceive, and their emotional/relational context. The LLM should generate the fields for the `SubjectiveEvent` model.
             - [ ] Call the `llm_interface` to get the response (likely JSON matching `SubjectiveEvent` schema).
             - [ ] Parse the LLM's JSON response into a `SubjectiveEvent` object.
             - [ ] Implement robust parsing and error handling.
-        - [ ] Implement `get_view_for(self, character_id: str, ground_truth_world_state: WorldState) -> SubjectiveWorldView`: (LLM-Based)
+        - [x] Implement `get_view_for(self, character_id: str, ground_truth_world_state: WorldState) -> SubjectiveWorldView`: (LLM-Based)
             - [ ] Fetch relevant context for `character_id` (persona, goals from `ground_truth_world_state.character_states[character_id]`, relevant memories from `self.memory_manager`, current mood from `ground_truth_world_state.character_states[character_id].current_mood`, relationship summaries if accessible).
             - [ ] Prepare a prompt based on `prompt_design.md#PERSPECTIVE_FILTER_INFERENCE`, providing all character context and the `ground_truth_world_state`.
             - [ ] Instruct the LLM to generate a complete JSON object matching the `SubjectiveWorldView` schema, inferring visibility, perceived states, and overall context.

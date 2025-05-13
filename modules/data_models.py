@@ -52,3 +52,19 @@ class SubjectiveWorldView(BaseModel):
     recent_perceived_events: List[SubjectiveEvent] = Field(default_factory=list)
     inferred_context: str = "No specific inferences drawn at this moment."
     active_focus_or_goal: Optional[str] = None 
+
+class LocationState(BaseModel):
+    """Represents the objective state of a location in the game world."""
+    id: str
+    name: str
+    description: str
+    objects_present: List[str] = Field(default_factory=list)
+    characters_present: List[str] = Field(default_factory=list)
+
+class ObjectState(BaseModel):
+    """Represents the objective state of an object in the game world."""
+    id: str
+    name: str
+    description: str
+    state: str  # e.g., "closed", "on", "broken"
+    is_interactive: bool = False 
