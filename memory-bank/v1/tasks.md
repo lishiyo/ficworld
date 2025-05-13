@@ -13,36 +13,36 @@ This plan outlines the subtasks for implementing the V1 architecture, integratin
 
 ### Subtask 7.1: Enhance Character Data & Loading
 - **Instructions:**
-    - [ ] Update `RoleArchetype` data model (or create new `CharacterConfig`) in `modules/data_models.py` to include `full_name`, `backstory`, and structured `initial_goals` (long-term, short-term).
-    - [ ] Update `data/roles/` JSON files to reflect the new structure (provide examples).
-    - [ ] Modify `ConfigLoader` to load this enhanced character configuration.
-    - [ ] Update `CharacterAgent.__init__` to store and utilize `full_name`, `backstory`, and structured `goals`.
-    - [ ] Write/update unit tests for data models, `ConfigLoader`, and `CharacterAgent.__init__`.
+    - [x] Update `RoleArchetype` data model (or create new `CharacterConfig`) in `modules/data_models.py` to include `full_name`, `backstory`, and structured `initial_goals` (long-term, short-term).
+    - [x] Update `data/roles/` JSON files to reflect the new structure (provide examples).
+    - [x] Modify `ConfigLoader` to load this enhanced character configuration.
+    - [x] Update `CharacterAgent.__init__` to store and utilize `full_name`, `backstory`, and structured `goals`.
+    - [x] Write/update unit tests for data models, `ConfigLoader`, and `CharacterAgent.__init__`. (Covered by updates to `test_data_models.py` and new `test_character_agent_v1.py`)
 
 ### Subtask 7.2: Enhance Agent Prompts (Core V1 Focus)
 - **Instructions:**
-    - [ ] Update `CHARACTER_SYSTEM` prompt to include `full_name`, `backstory`, and `initial_goals`.
-    - [ ] Update `CHARACTER_REFLECT` prompt:
-        - [ ] Ensure it utilizes backstory, goals.
-    - [ ] Update `CHARACTER_PLAN` prompt:
-        - [ ] Ensure it utilizes backstory, goals.
-        - [ ] **Action Variety:** Explicitly instruct the LLM to consider a wider range of actions (movement, interaction, non-action, environmental) beyond just "speak".
-        - [ ] **Goal-Driven:** Explicitly instruct the LLM to weigh character goals heavily when deciding on a plan.
-        - [ ] **Environmental Interaction:** Explicitly instruct the LLM to consider interacting with objects/environment mentioned in the world state.
-    - [ ] Update `Narrator` Prompts:
-        - [ ] Modify `NARRATOR_SYSTEM` or add a parameter to `render` to accept and use an `AUTHOR_STYLE` string (e.g., loaded from preset or env).
-    - [ ] Write/update unit tests for prompt generation logic within agents (mocking LLM).
+    - [x] Update `CHARACTER_SYSTEM` prompt to include `full_name`, `backstory`, and `initial_goals`.
+    - [x] Update `CHARACTER_REFLECT` prompt:
+        - [x] Ensure it utilizes backstory, goals.
+    - [x] Update `CHARACTER_PLAN` prompt:
+        - [x] Ensure it utilizes backstory, goals.
+        - [x] **Action Variety:** Explicitly instruct the LLM to consider a wider range of actions (movement, interaction, non-action, environmental) beyond just "speak".
+        - [x] **Goal-Driven:** Explicitly instruct the LLM to weigh character goals heavily when deciding on a plan.
+        - [x] **Environmental Interaction:** Explicitly instruct the LLM to consider interacting with objects/environment mentioned in the world state.
+    - [x] Update `Narrator` Prompts:
+        - [x] Modify `NARRATOR_SYSTEM` or add a parameter to `render` to accept and use an `AUTHOR_STYLE` string (e.g., loaded from preset or env).
+    - [x] Write/update unit tests for prompt generation logic within agents (mocking LLM). (Covered by `test_character_agent_v1.py` and `test_narrator_v1.py`)
 
 ### Subtask 7.3: Implement Relationship Manager (Basic)
 - **Instructions:**
-    - [ ] Create `modules/relationship_manager.py`.
-    - [ ] Define `RelationshipManager` class.
-    - [ ] Define `RelationshipState` data structure (e.g., dictionary mapping (char_a, char_b) tuples to state dict `{'trust': float, 'affinity': float, 'status': str}`).
-    - [ ] Implement `__init__` to initialize empty relationship states.
-    - [ ] Implement `get_state(char_a, char_b)` to retrieve the relationship state.
-    - [ ] Implement `update_state(char_a, char_b, new_state)` or `adjust_state(char_a, char_b, trust_delta, affinity_delta, new_status)` method.
-    - [ ] Implement `get_context_for(character_id)` to generate a summary string of a character's relationships for prompt injection.
-    - [ ] Write unit tests for `RelationshipManager` methods.
+    - [x] Create `modules/relationship_manager.py`.
+    - [x] Define `RelationshipManager` class.
+    - [x] Define `RelationshipState` data structure (e.g., dictionary mapping (char_a, char_b) tuples to state dict `{'trust': float, 'affinity': float, 'status': str}`).
+    - [x] Implement `__init__` to initialize empty relationship states.
+    - [x] Implement `get_state(char_a, char_b)` to retrieve the relationship state.
+    - [x] Implement `update_state(char_a, char_b, new_state)` or `adjust_state(char_a, char_b, trust_delta, affinity_delta, new_status)` method.
+    - [x] Implement `get_context_for(character_id)` to generate a summary string of a character's relationships for prompt injection.
+    - [x] Write unit tests for `RelationshipManager` methods.
 
 ### Subtask 7.4: Integrate Relationships & Summaries into Agents
 - **Instructions:**

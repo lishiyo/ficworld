@@ -1,3 +1,34 @@
+Date: Tue May 13 00:34:44 PDT 2025
+
+## Changes Since Last Update
+- **Test Refactoring & Bug Fixing:**
+    - Moved V1-specific test classes from `tests/test_memory.py`, `tests/test_character_agent.py`, and `tests/test_narrator.py` into their own dedicated files: `tests/test_memory_manager_v1.py`, `tests/test_character_agent_v1.py`, and `tests/test_narrator_v1.py` respectively.
+    - Addressed several unit test failures:
+        - In `tests/test_character_agent_v1.py`: Corrected `MoodVector` instantiation in `test_v1_character_agent_initialization` to align with the dataclass definition (avoiding `TypeError` for unexpected keyword arguments).
+        - In `tests/test_data_models.py`: Updated Pydantic V2 error message assertion for `activity_coefficient` from `float_type` to `float_parsing`. Also, updated `CharacterState` and `LogEntry` instantiations to match their current dataclass definitions, resolving `TypeError`s for missing or unexpected arguments.
+        - In `tests/test_memory_manager_v1.py`: Fixed an `AttributeError` in `test_summarise_scene_populates_for_get_recent` by changing dictionary-style access (`.get()`) to attribute access for `LogEntry` objects.
+- **Continued Phase 7: V1 Improvements - Part 1:**
+  - **Subtask 7.1: Enhance Character Data & Loading (Completed):**
+    - `CharacterConfig` and `InitialGoals` models are defined and used.
+    - `ConfigLoader` updated for V1 character files.
+    - `CharacterAgent.__init__` uses `CharacterConfig`.
+    - Related unit tests in `test_data_models.py` and `test_character_agent_v1.py` are passing.
+  - **Subtask 7.2: Enhance Agent Prompts (Core V1 Focus - Completed):**
+    - `CharacterAgent` prompt helper methods (`_prepare_character_system_prompt`, `_prepare_reflection_prompt`, `_prepare_plan_prompt`) updated for V1.
+    - `Narrator.render()` method updated to support `author_style`.
+    - Related unit tests in `test_character_agent_v1.py` and `test_narrator_v1.py` are passing.
+
+## Errors Encountered and Learnings
+- **Test Alignment:** Reinforced the necessity of keeping unit tests synchronized with evolving data model definitions and library-specific error messages (e.g., Pydantic validation errors).
+- **Incremental Testing:** Fixing tests incrementally as modules are refactored helps isolate issues and confirm individual components are working as expected before larger integrations.
+- **Expected Failures:** Failures in `test_main.py` and `test_world_agent.py` are anticipated as these modules have not yet been updated to integrate the V1 changes to `CharacterAgent` and its configuration (pending Subtask 7.4).
+
+## Next Steps Planned
+- Proceed to **Subtask 7.3: Implement Relationship Manager (Basic)** as per `memory-bank/v1/tasks.md`.
+
+---
+# Progress
+
 Date: Tue May 13 00:11:04 PDT 2025
 
 ## Changes Since Last Update
