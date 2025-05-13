@@ -46,16 +46,16 @@ This plan outlines the subtasks for implementing the V1 architecture, integratin
 
 ### Subtask 7.4: Integrate Relationships & Summaries into Agents
 - **Instructions:**
-    - [ ] Modify `SimulationManager` (or `main.py`) to instantiate `RelationshipManager`.
-    - [ ] Modify `WorldAgent`:
-        - [ ] Add logic to call `RelationshipManager.update_state` based on interaction outcomes (`factual_outcome` from `apply_plan`). This might require an LLM call within `apply_plan` or a dedicated step to interpret the outcome's social implications.
-    - [ ] Modify `CharacterAgent`:
-        - [ ] Update `reflect` and `plan` methods to accept `relationship_context` (from `RelationshipManager.get_context_for`) and `scene_summary_context` (from `MemoryManager`).
-        - [ ] Incorporate these contexts into the `CHARACTER_REFLECT` and `CHARACTER_PLAN` prompts.
-    - [ ] Modify `MemoryManager`:
-        - [ ] Ensure `summarise_scene` is functional (even if basic).
-        - [ ] Implement a method like `get_recent_scene_summaries()` to provide context.
-    - [ ] Write/update unit tests for the modified methods in `WorldAgent`, `CharacterAgent`, and `MemoryManager`, focusing on the integration points (mocking dependencies).
+    - [x] Modify `SimulationManager` (or `main.py`) to instantiate `RelationshipManager`.
+    - [x] Modify `WorldAgent`:
+        - [x] Add logic to call `RelationshipManager.update_state` based on interaction outcomes (`factual_outcome` from `apply_plan`). This might require an LLM call within `apply_plan` or a dedicated step to interpret the outcome's social implications.
+    - [x] Modify `CharacterAgent`:
+        - [x] Update `reflect` and `plan` methods to accept `relationship_context` (from `RelationshipManager.get_context_for`) and `scene_summary_context` (from `MemoryManager`).
+        - [x] Incorporate these contexts into the `CHARACTER_REFLECT` and `CHARACTER_PLAN` prompts.
+    - [x] Modify `MemoryManager`:
+        - [x] Ensure `summarise_scene` is functional (even if basic).
+        - [x] Implement a method like `get_recent_scene_summaries()` to provide context.
+    - [x] Write/update unit tests for the modified methods in `WorldAgent`, `CharacterAgent`, and `MemoryManager`, focusing on the integration points (mocking dependencies).
 
 ---
 
