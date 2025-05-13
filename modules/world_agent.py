@@ -6,7 +6,7 @@ import json
 from .models import WorldDefinition, WorldState, CharacterState, MoodVector
 from .llm_interface import LLMInterface
 from .relationship_manager import RelationshipManager, RelationshipState
-
+import logging
 
 class WorldAgent:
     """
@@ -552,56 +552,79 @@ class WorldAgent:
         involved_characters: List[str]
     ) -> List[Dict[str, Any]]:
         """
-        Placeholder: Interprets factual_outcome to determine relationship changes.
-        In a full V1 implementation, this would use an LLM call with RELATIONSHIP_UPDATE_INTERPRETATION prompt.
-        Returns a list of relationship adjustments, e.g.:
-        [{"char_pair": ["Alice", "Bob"], "trust_delta": 0.1, "affinity_delta": 0.05, "new_status": "allies"}, ...]
+        Placeholder V1: Interprets factual_outcome to determine relationship changes based on simple keywords.
+        A more advanced version would use LLM (RELATIONSHIP_UPDATE_INTERPRETATION prompt).
+        
+        Args:
+            actor_name: The character who performed the action.
+            factual_outcome: The resulting description of what happened.
+            involved_characters: List of character names involved (actor + potentially target/others).
+            
+        Returns:
+            List of relationship adjustments, e.g.:
+            [{"char_a": "Alice", "char_b": "Bob", "trust_delta": 0.1, "affinity_delta": 0.05, "new_status": "allies"}, ...]
         """
         # logging.info(f"WORLD_AGENT_DEBUG: Interpreting outcome for relationships: '{factual_outcome}' involving {involved_characters}")
-        # This is a very basic placeholder. A real version needs LLM or complex heuristics.
         updates = []
-        if not involved_characters or len(involved_characters) < 2:
-            # If action doesn't clearly involve another, or only involves the actor.
-            # For self-talk or environment interaction, typically no direct relationship change with OTHERS.
-            return updates
+        if len(involved_characters) < 2:
+            return updates # No relationship change if only one character involved
 
-        # Example: If outcome mentions "helps" or "praises" target, increase trust/affinity from actor to target.
-        # If outcome mentions "attacks" or "insults" target, decrease trust/affinity.
-        
-        # Placeholder logic: assumes outcome primarily affects actor and first other involved character
-        # This needs to be much more sophisticated.
-        char_b_id = None
-        for char_id in involved_characters:
-            if char_id != actor_name:
-                char_b_id = char_id
-                break
-        
-        if char_b_id:
-            # Extremely simplified placeholder logic
-            if "helps" in factual_outcome.lower() or "thanks" in factual_outcome.lower():
+        # Simple keyword-based analysis
+        outcome_lower = factual_outcome.lower()
+        trust_delta = 0.0
+        affinity_delta = 0.0
+
+        # Positive interactions
+        if any(verb in outcome_lower for verb in ["helps", "thanks", "praises", "agrees with", "comforts", "saves"]):
+            trust_delta += 0.05
+            affinity_delta += 0.02
+        # Negative interactions
+        elif any(verb in outcome_lower for verb in ["attacks", "insults", "threatens", "accuses", "ignores", "betrays"]):
+            trust_delta -= 0.1
+            affinity_delta -= 0.05
+        elif "disagrees with" in outcome_lower:
+            trust_delta -= 0.02
+            affinity_delta -= 0.01
+
+        if trust_delta != 0.0 or affinity_delta != 0.0:
+            # Apply the delta between the actor and the first *other* involved character
+            # This is a simplification. A real system might parse the target explicitly
+            # or apply deltas between all pairs present based on the action.
+            target_char = None
+            for char in involved_characters:
+                if char != actor_name:
+                    target_char = char
+                    break
+            
+            if target_char:
+                 # Update Actor's view of Target
                 updates.append({
-                    "char_pair": sorted([actor_name, char_b_id]), # Use sorted for consistent key lookup if manager needs it
-                    "trust_delta": 0.05,
-                    "affinity_delta": 0.02
+                    "char_a": actor_name,
+                    "char_b": target_char,
+                    "trust_delta": trust_delta,
+                    "affinity_delta": affinity_delta
                 })
-            elif "attacks" in factual_outcome.lower() or "insults" in factual_outcome.lower():
+                 # Update Target's view of Actor (can be slightly different, e.g., less trust change if attacked)
+                 # For simplicity, using the same delta for now. Could refine this.
                 updates.append({
-                    "char_pair": sorted([actor_name, char_b_id]),
-                    "trust_delta": -0.1,
-                    "affinity_delta": -0.05
+                    "char_a": target_char,
+                    "char_b": actor_name,
+                    "trust_delta": trust_delta * 0.8, # Example: target might react slightly differently
+                    "affinity_delta": affinity_delta * 0.8
                 })
-        
-        # print(f"WORLD_AGENT_DEBUG: Placeholder relationship updates derived: {updates}")
+
+        logging.info(f"DEBUG_WORLD_AGENT (_interpret_outcome_for_relationship_update): Returning updates: {updates}")
         return updates
 
-    def apply_plan(self, actor_name: str, plan_json: Dict, current_world_state=None) -> str:
+    def apply_plan(self, actor_name: str, plan_json: Any, current_world_state=None) -> str:
         """
         Apply a character's plan to the world state and generate a factual outcome.
         Uses the LLM to interpret the plan in context and generate appropriate outcomes.
+        Also updates relationships based on the outcome.
         
         Args:
             actor_name: Name of the character performing the action
-            plan_json: The plan JSON object from CharacterAgent.plan()
+            plan_json: The plan JSON object (or CharacterPlanOutput) from CharacterAgent.plan()
             current_world_state: Optional current world state, uses self.world_state if None
             
         Returns:
@@ -613,15 +636,26 @@ class WorldAgent:
         # Increment turn counter
         current_world_state.turn_number += 1
         
-        # Extract plan details
-        action_type = plan_json.action
-        details = plan_json.details
-        tone = plan_json.tone_of_action
+        # Extract plan details (Handle if plan_json is CharacterPlanOutput dataclass)
+        if hasattr(plan_json, 'action'): # Check if it looks like CharacterPlanOutput
+            action_type = plan_json.action
+            details = plan_json.details
+            tone = plan_json.tone_of_action
+        elif isinstance(plan_json, dict): # Fallback if it's still a dict
+            action_type = plan_json.get("action", "unknown")
+            details = plan_json.get("details", {})
+            tone = plan_json.get("tone_of_action", "neutral")
+        else:
+            action_type = "unknown"
+            details = {}
+            tone = "neutral"
+            logging.warning(f"apply_plan received unexpected plan_json type: {type(plan_json)}")
         
         # Create a textual representation of the plan for LLM processing
         plan_text = f"Action: {action_type}"
-        for key, value in details.items():
-            plan_text += f"\n{key}: {value}"
+        if isinstance(details, dict):
+            for key, value in details.items():
+                plan_text += f"\n{key}: {value}"
         plan_text += f"\nTone: {tone}"
         
         # Prepare location and character context
@@ -691,52 +725,48 @@ class WorldAgent:
             # Clean up response if needed (remove quotes, extra spaces, etc.)
             factual_outcome = outcome_response.strip().strip('"\\\'')
             
-            # Add to recent events - MOVED to update_from_outcome
-            # current_world_state.recent_events_summary.append(factual_outcome)
-            
-            # Keep recent events list manageable - MOVED to update_from_outcome
-            # if len(current_world_state.recent_events_summary) > self.recent_events_history_limit:
-            #     current_world_state.recent_events_summary = current_world_state.recent_events_summary[-self.recent_events_history_limit:]
-            
-            # Location and other state changes will be handled by update_from_outcome
-            
             # V1: After factual_outcome, interpret for relationship updates
-            # Identify involved characters: actor_name and any mentioned in plan_json details (e.g., target_char_id)
-            involved_for_relations = {actor_name}
-            if plan_json.get("details") and isinstance(plan_json["details"], dict):
-                target_char = plan_json["details"].get("target_char_id") or plan_json["details"].get("target_character") # common keys
-                if target_char and isinstance(target_char, str):
-                    involved_for_relations.add(target_char)
+            # Identify involved characters: actor_name and any mentioned in plan details
+            involved_for_relations = {actor_name} 
+            if isinstance(details, dict):
+                # Look for common keys indicating a target character
+                target_char_keys = ["target_char_id", "target_character", "recipient", "target"]
+                for key in target_char_keys:
+                    target_char = details.get(key)
+                    if target_char and isinstance(target_char, str):
+                        if target_char in self.world_state.character_states: # Ensure target exists
+                            involved_for_relations.add(target_char)
+                        break # Found a target
             
             # Potentially parse factual_outcome for other mentioned characters (more complex)
+            # For now, relies on actor + explicitly targeted character from plan
             
             if len(involved_for_relations) >= 2: # Only update if at least two distinct characters are involved
                 relationship_adjustments = self._interpret_outcome_for_relationship_update(
-                    actor_name, factual_outcome, list(involved_for_relations)
+                    actor_name,
+                    factual_outcome,
+                    list(involved_for_relations)
                 )
                 for adj in relationship_adjustments:
-                    pair = adj["char_pair"]
-                    if len(pair) == 2:
-                        # Ensure RelationshipManager handles order of char_pair internally if needed,
-                        # or that _get_relationship_key in RM sorts them.
-                        # Here, assuming RM can take (A,B) or (B,A) if its internal key is frozenset.
+                    char_a = adj.get("char_a")
+                    char_b = adj.get("char_b")
+                    if char_a and char_b:
                         self.relationship_manager.adjust_state(
-                            char_a_id=pair[0],
-                            char_b_id=pair[1],
+                            char_a_id=char_a,
+                            char_b_id=char_b,
                             trust_delta=adj.get("trust_delta", 0.0),
                             affinity_delta=adj.get("affinity_delta", 0.0),
-                            new_status=adj.get("new_status")
+                            new_status=adj.get("new_status") # Pass status if provided
                         )
-            
+                        logging.info(f"Relationship adjusted: {char_a} -> {char_b}, TrustDelta: {adj.get('trust_delta', 0.0):.2f}, AffDelta: {adj.get('affinity_delta', 0.0):.2f}")
+                    else:
+                        logging.warning(f"Skipping relationship adjustment due to missing char_a/char_b: {adj}")
+
             return factual_outcome
             
         except Exception as e:
             # Fallback if LLM call fails
             fallback_outcome = f"{actor_name} attempts to {action_type}."
-            # current_world_state.recent_events_summary.append(fallback_outcome)
-            # Ensure fallback also respects history limit
-            # if len(current_world_state.recent_events_summary) > self.recent_events_history_limit:
-            #     current_world_state.recent_events_summary = current_world_state.recent_events_summary[-self.recent_events_history_limit:]
             return fallback_outcome
     
     def should_inject_event(self, current_world_state=None) -> bool:
@@ -841,17 +871,18 @@ class WorldAgent:
             if hasattr(self.world_definition, 'world_events_pool') and self.world_definition.world_events_pool:
                 event = next((e for e in self.world_definition.world_events_pool if e.get("event_id") == event_id), None)
                 if event:
-                    event_desc = event.description if event and hasattr(event, 'description') else "Something happens."
+                    event_desc = event.get("description") if event else "Something happens."
                     if beat_id_to_complete: # Check if we captured a beat_id
                         self.completed_beats.add(beat_id_to_complete)
                     self.current_beat = None 
-                    return event_desc
+                    return event_desc if event_desc else "Something happens." # Ensure fallback if desc is None/empty
             # If event not found in pool or no pool, fall through to other methods
                         
         # Approach 2: Pick randomly from event pool
         if hasattr(self.world_definition, 'world_events_pool') and self.world_definition.world_events_pool:
             event = random.choice(self.world_definition.world_events_pool)
-            return event.description if event and hasattr(event, 'description') else "Something unexpected happens."
+            event_desc = event.get("description") if event else "Something unexpected happens."
+            return event_desc if event_desc else "Something unexpected happens."
             
         # Approach 3: Use LLM to generate a contextual event
         if self.llm_interface:
@@ -992,9 +1023,8 @@ class WorldAgent:
                 if "location_changes" in changes and isinstance(changes["location_changes"], dict):
                     for char_name, new_location in changes["location_changes"].items():
                         if char_name in self.world_state.character_states:
-                            print(f"DEBUG: Updating location for {char_name} to {new_location}. Old loc: {self.world_state.character_states[char_name].location}") # DEBUG
+                            logging.info(f"DEBUG: Updating location for {char_name} to {new_location}. Old loc: {self.world_state.character_states[char_name].location}") # DEBUG
                             self.world_state.character_states[char_name].location = new_location
-                            print(f"DEBUG: New location for {char_name} is {self.world_state.character_states[char_name].location}") # DEBUG
                 
                 # Apply condition changes
                 if "condition_changes" in changes and isinstance(changes["condition_changes"], dict):

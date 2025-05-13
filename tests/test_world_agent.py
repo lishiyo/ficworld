@@ -4,7 +4,8 @@ import json
 import random
 
 from modules.world_agent import WorldAgent
-from modules.models import WorldDefinition, Location, CharacterState
+from modules.models import WorldDefinition, Location, CharacterState, MoodVector
+from modules.relationship_manager import RelationshipManager
 
 
 class TestWorldAgent(unittest.TestCase):
@@ -64,11 +65,11 @@ class TestWorldAgent(unittest.TestCase):
         )
         
         # Mock LLM interface
-        self.llm_interface = Mock()
-        self.llm_interface.generate_response = MagicMock(return_value="A distant howl echoes through the trees.")
+        self.llm_interface = MagicMock()
+        self.llm_interface.generate_response_sync = MagicMock(return_value="A distant howl echoes through the trees.")
         
-        # Character data with activity coefficients
-        self.characters_data = {
+        # Original Character data dict (for reference)
+        characters_data_ref = {
             "Knight": {
                 "persona": "A brave knight",
                 "goals": ["protect the realm"],
@@ -91,34 +92,79 @@ class TestWorldAgent(unittest.TestCase):
                                  "sadness": 0.0, "surprise": 0.2, "trust": 0.1}
             }
         }
+
+        # Convert to V1 initial_character_states (Dict[str, CharacterState])
+        self.initial_character_states = {}
+        for char_name, data in characters_data_ref.items():
+            start_mood_dict = data["starting_mood"]
+            mood_vector = MoodVector(
+                joy=start_mood_dict.get("joy", 0.0),
+                fear=start_mood_dict.get("fear", 0.0),
+                anger=start_mood_dict.get("anger", 0.0),
+                sadness=start_mood_dict.get("sadness", 0.0),
+                surprise=start_mood_dict.get("surprise", 0.0),
+                trust=start_mood_dict.get("trust", 0.0)
+            )
+            self.initial_character_states[char_name] = CharacterState(
+                name=char_name,
+                persona=data["persona"],
+                goals=data["goals"],
+                current_mood=mood_vector,
+                activity_coefficient=data["activity"],
+                location="town_square", # Default starting location for test
+                conditions=[],
+                inventory={}
+            )
         
-        # Create WorldAgent instance (relying on default config values for thresholds)
+        # Mock RelationshipManager
+        self.mock_relationship_manager = MagicMock(spec=RelationshipManager)
+
+        # Create WorldAgent instance with V1 signature
         self.world_agent = WorldAgent(
             world_definition=self.world_definition,
             llm_interface=self.llm_interface,
-            characters_data=self.characters_data
+            character_states=self.initial_character_states, # Use the V1 structure
+            relationship_manager=self.mock_relationship_manager # Pass the mock RM
+            # Using default values for thresholds like max_scene_turns etc.
         )
     
     def test_init(self):
         """Test WorldAgent initialization"""
-        # Check that world_state was initialized correctly
+        # Check basic world state init
         self.assertEqual(self.world_agent.world_state.current_scene_id, "scene_1")
         self.assertEqual(self.world_agent.world_state.turn_number, 0)
         self.assertEqual(self.world_agent.world_state.time_of_day, "morning")
         self.assertEqual(self.world_agent.world_state.environment_description, self.world_definition.description)
         
         # Check that all characters are active
-        self.assertEqual(set(self.world_agent.world_state.active_characters), set(self.characters_data.keys()))
+        self.assertEqual(set(self.world_agent.world_state.active_characters), set(self.initial_character_states.keys()))
+        
+        # Check relationship manager was stored
+        self.assertIs(self.world_agent.relationship_manager, self.mock_relationship_manager)
         
         # Check character states
-        for char_name in self.characters_data:
+        for char_name, initial_state in self.initial_character_states.items():
             self.assertIn(char_name, self.world_agent.world_state.character_states)
             character_state_obj = self.world_agent.world_state.character_states[char_name]
-            self.assertEqual(character_state_obj.location, "town_square")
-            self.assertEqual(character_state_obj.current_mood, self.characters_data[char_name]["starting_mood"])
+            
+            # Verify it's the same object passed in (important for state management)
+            self.assertIs(character_state_obj, initial_state)
+            
+            self.assertEqual(character_state_obj.name, char_name)
+            self.assertEqual(character_state_obj.persona, initial_state.persona)
+            self.assertEqual(character_state_obj.goals, initial_state.goals)
+            self.assertEqual(character_state_obj.location, initial_state.location) # Check initial location
+            self.assertEqual(character_state_obj.activity_coefficient, initial_state.activity_coefficient)
+            # Compare mood vectors field by field
+            self.assertEqual(character_state_obj.current_mood.joy, initial_state.current_mood.joy)
+            self.assertEqual(character_state_obj.current_mood.fear, initial_state.current_mood.fear)
+            self.assertEqual(character_state_obj.current_mood.anger, initial_state.current_mood.anger)
+            self.assertEqual(character_state_obj.current_mood.sadness, initial_state.current_mood.sadness)
+            self.assertEqual(character_state_obj.current_mood.surprise, initial_state.current_mood.surprise)
+            self.assertEqual(character_state_obj.current_mood.trust, initial_state.current_mood.trust)
         
-        # Check configurable parameters are set to defaults
-        self.assertEqual(self.world_agent.max_turns_per_scene, 20)
+        # Check configurable parameters are set to defaults (assuming they are passed via __init__)
+        self.assertEqual(self.world_agent.max_scene_turns, 20) 
         self.assertEqual(self.world_agent.stagnation_detection_threshold, 3)
         self.assertEqual(self.world_agent.llm_event_injection_override_chance, 0.05)
         self.assertEqual(self.world_agent.fallback_event_injection_chance, 0.15)
@@ -145,7 +191,7 @@ class TestWorldAgent(unittest.TestCase):
     def test_judge_scene_end_by_turn_count(self):
         """Test scene ending due to high turn count"""
         # Set a high turn number, exceeding the configured max
-        self.world_agent.world_state.turn_number = self.world_agent.max_turns_per_scene + 1
+        self.world_agent.world_state.turn_number = self.world_agent.max_scene_turns + 1
         
         # Empty log
         scene_log = []
@@ -156,7 +202,7 @@ class TestWorldAgent(unittest.TestCase):
     def test_judge_scene_end_llm_decision(self):
         """Test scene ending based on LLM decision"""
         # Mock the LLM to return "yes"
-        self.llm_interface.generate_response.return_value = "yes"
+        self.llm_interface.generate_response_sync.return_value = "yes"
         
         # Create a log with a few events
         scene_log = [
@@ -165,28 +211,28 @@ class TestWorldAgent(unittest.TestCase):
             {"outcome": "Rogue sneaks around the perimeter."}
         ]
         
-        # Ensure turn count is below max_turns_per_scene for this test
+        # Ensure turn count is below max_scene_turns for this test
         self.world_agent.world_state.turn_number = 5
         
         # Should end due to LLM saying "yes"
         self.assertTrue(self.world_agent.judge_scene_end(scene_log))
         
         # Verify LLM was called with appropriate prompts
-        self.llm_interface.generate_response.assert_called_once()
-        args, kwargs = self.llm_interface.generate_response.call_args
+        self.llm_interface.generate_response_sync.assert_called_once()
+        args, kwargs = self.llm_interface.generate_response_sync.call_args
         self.assertIn("evaluate", kwargs.get("system_prompt", ""))
         self.assertIn("scene has reached", kwargs.get("system_prompt", ""))
         
         # Reset mock and test "no" response
-        self.llm_interface.generate_response.reset_mock()
-        self.llm_interface.generate_response.return_value = "no"
+        self.llm_interface.generate_response_sync.reset_mock()
+        self.llm_interface.generate_response_sync.return_value = "no"
         
         # Should not end when LLM says "no"
         self.assertFalse(self.world_agent.judge_scene_end(scene_log))
         
         # Test fallback behavior with LLM exception
-        self.llm_interface.generate_response.reset_mock()
-        self.llm_interface.generate_response.side_effect = Exception("LLM error")
+        self.llm_interface.generate_response_sync.reset_mock()
+        self.llm_interface.generate_response_sync.side_effect = Exception("LLM error")
         
         # Should use fallback stagnation checks
         # Create a log that would trigger stagnation fallback
@@ -194,16 +240,16 @@ class TestWorldAgent(unittest.TestCase):
             {"outcome": "Short."},
             {"outcome": "Also short."},
             {"outcome": "Very short."}
-        ] * self.world_agent.stagnation_threshold # Ensure enough for threshold
+        ] * self.world_agent.stagnation_detection_threshold # Ensure enough for threshold
         self.assertTrue(self.world_agent.judge_scene_end(stagnant_log))
         
         # Reset side effect
-        self.llm_interface.generate_response.side_effect = None
+        self.llm_interface.generate_response_sync.side_effect = None
     
     def test_choose_pov_character_llm(self):
         """Test POV character selection using LLM"""
         # Mock the LLM to return a specific character
-        self.llm_interface.generate_response.return_value = "Scholar"
+        self.llm_interface.generate_response_sync.return_value = "Scholar"
         
         # Get POV character
         pov_name, pov_info = self.world_agent.choose_pov_character_for_scene()
@@ -212,34 +258,34 @@ class TestWorldAgent(unittest.TestCase):
         self.assertEqual(pov_name, "Scholar")
         
         # Verify LLM was called with appropriate prompts
-        self.llm_interface.generate_response.assert_called_once()
-        args, kwargs = self.llm_interface.generate_response.call_args
+        self.llm_interface.generate_response_sync.assert_called_once()
+        args, kwargs = self.llm_interface.generate_response_sync.call_args
         self.assertIn("select which character", kwargs.get("system_prompt", ""))
         self.assertIn("compelling viewpoint", kwargs.get("system_prompt", ""))
         
         # Test with partial match
-        self.llm_interface.generate_response.reset_mock()
-        self.llm_interface.generate_response.return_value = "I think the Knight would be best because..."
+        self.llm_interface.generate_response_sync.reset_mock()
+        self.llm_interface.generate_response_sync.return_value = "I think the Knight would be best because..."
         
         pov_name, pov_info = self.world_agent.choose_pov_character_for_scene()
         self.assertEqual(pov_name, "Knight")
         
         # Test with no match (should fall back to first character)
-        self.llm_interface.generate_response.reset_mock()
-        self.llm_interface.generate_response.return_value = "Someone else"
+        self.llm_interface.generate_response_sync.reset_mock()
+        self.llm_interface.generate_response_sync.return_value = "Someone else"
         
         pov_name, pov_info = self.world_agent.choose_pov_character_for_scene()
         self.assertEqual(pov_name, self.world_agent.world_state.active_characters[0])
         
         # Test with exception (should fall back to random)
-        self.llm_interface.generate_response.reset_mock()
-        self.llm_interface.generate_response.side_effect = Exception("LLM error")
+        self.llm_interface.generate_response_sync.reset_mock()
+        self.llm_interface.generate_response_sync.side_effect = Exception("LLM error")
         
         pov_name, pov_info = self.world_agent.choose_pov_character_for_scene()
         self.assertIn(pov_name, self.world_agent.world_state.active_characters)
         
         # Reset side effect
-        self.llm_interface.generate_response.side_effect = None
+        self.llm_interface.generate_response_sync.side_effect = None
         
         # Test with empty active characters
         self.world_agent.world_state.active_characters = []
@@ -249,7 +295,7 @@ class TestWorldAgent(unittest.TestCase):
     def test_decide_next_actor_llm(self):
         """Test actor selection using LLM"""
         # Mock the LLM to return a specific character
-        self.llm_interface.generate_response.return_value = "Rogue"
+        self.llm_interface.generate_response_sync.return_value = "Rogue"
         
         # Get next actor
         actor_name, actor_state = self.world_agent.decide_next_actor()
@@ -258,20 +304,20 @@ class TestWorldAgent(unittest.TestCase):
         self.assertEqual(actor_name, "Rogue")
         
         # Verify LLM was called with appropriate prompts
-        self.llm_interface.generate_response.assert_called_once()
-        args, kwargs = self.llm_interface.generate_response.call_args
+        self.llm_interface.generate_response_sync.assert_called_once()
+        args, kwargs = self.llm_interface.generate_response_sync.call_args
         self.assertIn("select which character should act next", kwargs.get("system_prompt", ""))
         
         # Test with partial match
-        self.llm_interface.generate_response.reset_mock()
-        self.llm_interface.generate_response.return_value = "I believe Knight should act next because..."
+        self.llm_interface.generate_response_sync.reset_mock()
+        self.llm_interface.generate_response_sync.return_value = "I believe Knight should act next because..."
         
         actor_name, actor_state = self.world_agent.decide_next_actor()
         self.assertEqual(actor_name, "Knight")
         
         # Test with no match (should fall back to activity-based selection)
-        self.llm_interface.generate_response.reset_mock()
-        self.llm_interface.generate_response.return_value = "Someone else"
+        self.llm_interface.generate_response_sync.reset_mock()
+        self.llm_interface.generate_response_sync.return_value = "Someone else"
         
         # Set a fixed random seed for predictable selection in fallback
         with patch('random.random', return_value=0.5):
@@ -279,15 +325,15 @@ class TestWorldAgent(unittest.TestCase):
             self.assertIn(actor_name, self.world_agent.world_state.active_characters)
         
         # Test with exception (should fall back to activity-based selection)
-        self.llm_interface.generate_response.reset_mock()
-        self.llm_interface.generate_response.side_effect = Exception("LLM error")
+        self.llm_interface.generate_response_sync.reset_mock()
+        self.llm_interface.generate_response_sync.side_effect = Exception("LLM error")
         
         with patch('random.random', return_value=0.5):
             actor_name, actor_state = self.world_agent.decide_next_actor()
             self.assertIn(actor_name, self.world_agent.world_state.active_characters)
         
         # Reset side effect
-        self.llm_interface.generate_response.side_effect = None
+        self.llm_interface.generate_response_sync.side_effect = None
         
         # Test script mode with required actor
         self.world_agent.script_mode = True
@@ -303,19 +349,19 @@ class TestWorldAgent(unittest.TestCase):
     def test_should_inject_event_llm(self):
         """Test event injection decision using LLM"""
         # Mock the LLM to return "yes"
-        self.llm_interface.generate_response.return_value = "yes"
+        self.llm_interface.generate_response_sync.return_value = "yes"
         
         # Should inject when LLM says "yes"
         self.assertTrue(self.world_agent.should_inject_event())
         
         # Verify LLM was called with appropriate prompts
-        self.llm_interface.generate_response.assert_called_once()
-        args, kwargs = self.llm_interface.generate_response.call_args
+        self.llm_interface.generate_response_sync.assert_called_once()
+        args, kwargs = self.llm_interface.generate_response_sync.call_args
         self.assertIn("evaluate if injecting", kwargs.get("system_prompt", ""))
         
         # Test with "no" response
-        self.llm_interface.generate_response.reset_mock()
-        self.llm_interface.generate_response.return_value = "no"
+        self.llm_interface.generate_response_sync.reset_mock()
+        self.llm_interface.generate_response_sync.return_value = "no"
         
         # Force the random chance to be above threshold for llm_event_injection_override_chance
         with patch('random.random', return_value=self.world_agent.llm_event_injection_override_chance + 0.01):
@@ -326,8 +372,8 @@ class TestWorldAgent(unittest.TestCase):
             self.assertTrue(self.world_agent.should_inject_event())
         
         # Test fallback with exception
-        self.llm_interface.generate_response.reset_mock()
-        self.llm_interface.generate_response.side_effect = Exception("LLM error")
+        self.llm_interface.generate_response_sync.reset_mock()
+        self.llm_interface.generate_response_sync.side_effect = Exception("LLM error")
         
         # Should use fallback random chance
         with patch('random.random', return_value=self.world_agent.fallback_event_injection_chance - 0.01):
@@ -337,7 +383,7 @@ class TestWorldAgent(unittest.TestCase):
             self.assertFalse(self.world_agent.should_inject_event())
         
         # Reset side effect
-        self.llm_interface.generate_response.side_effect = None
+        self.llm_interface.generate_response_sync.side_effect = None
         
         # Test script mode trigger
         self.world_agent.script_mode = True
@@ -348,7 +394,7 @@ class TestWorldAgent(unittest.TestCase):
     def test_generate_event_llm(self):
         """Test event generation using LLM and other approaches"""
         # Test LLM-based event generation
-        self.llm_interface.generate_response.return_value = "A distant howl echoes through the trees."
+        self.llm_interface.generate_response_sync.return_value = "A distant howl echoes through the trees."
         
         # Mock the event pool to force LLM route
         original_events = self.world_definition.world_events_pool
@@ -360,15 +406,15 @@ class TestWorldAgent(unittest.TestCase):
         self.assertEqual(event, "A distant howl echoes through the trees.")
         
         # Verify LLM was called with appropriate prompts
-        self.llm_interface.generate_response.assert_called_once()
-        args, kwargs = self.llm_interface.generate_response.call_args
+        self.llm_interface.generate_response_sync.assert_called_once()
+        args, kwargs = self.llm_interface.generate_response_sync.call_args
         self.assertIn("generate a small, contextual environmental event", kwargs.get("system_prompt", ""))
         
         # Restore event pool
         self.world_definition.world_events_pool = original_events
         
         # Test random selection from event pool
-        self.llm_interface.generate_response.reset_mock()
+        self.llm_interface.generate_response_sync.reset_mock()
         
         # Since we're selecting randomly, just verify it returns a string
         event = self.world_agent.generate_event()
@@ -387,8 +433,8 @@ class TestWorldAgent(unittest.TestCase):
         self.assertEqual(event, "A glowing artifact is discovered among the rubble.")
         
         # Test exception handling
-        self.llm_interface.generate_response.reset_mock()
-        self.llm_interface.generate_response.side_effect = Exception("LLM error")
+        self.llm_interface.generate_response_sync.reset_mock()
+        self.llm_interface.generate_response_sync.side_effect = Exception("LLM error")
         
         # Reset script mode and event pool to force fallback
         self.world_agent.script_mode = False
@@ -400,7 +446,7 @@ class TestWorldAgent(unittest.TestCase):
         self.assertIsInstance(event, str)
         
         # Reset state
-        self.llm_interface.generate_response.side_effect = None
+        self.llm_interface.generate_response_sync.side_effect = None
         self.world_definition.world_events_pool = original_events
     
     def test_update_from_outcome_llm(self):
@@ -413,7 +459,7 @@ class TestWorldAgent(unittest.TestCase):
             "time_changes": {"time_of_day": "evening"}
         }
         """
-        self.llm_interface.generate_response.return_value = changes_json
+        self.llm_interface.generate_response_sync.return_value = changes_json
         
         # Initial empty recent events
         self.world_agent.world_state.recent_events_summary = []
@@ -430,7 +476,7 @@ class TestWorldAgent(unittest.TestCase):
         self.assertLessEqual(len(self.world_agent.world_state.recent_events_summary), self.world_agent.recent_events_history_limit)
         
         # Verify LLM was called
-        self.llm_interface.generate_response.assert_called_once()
+        self.llm_interface.generate_response_sync.assert_called_once()
         
         # Check state changes were applied
         self.assertEqual(self.world_agent.world_state.character_states["Knight"].location, "old_ruins")
@@ -438,8 +484,8 @@ class TestWorldAgent(unittest.TestCase):
         self.assertEqual(self.world_agent.world_state.time_of_day, "evening")
         
         # Test with invalid JSON response
-        self.llm_interface.generate_response.reset_mock()
-        self.llm_interface.generate_response.return_value = "Not valid JSON"
+        self.llm_interface.generate_response_sync.reset_mock()
+        self.llm_interface.generate_response_sync.return_value = "Not valid JSON"
         
         self.world_agent.update_from_outcome("Another event happens.")
         
@@ -447,8 +493,8 @@ class TestWorldAgent(unittest.TestCase):
         self.assertLessEqual(len(self.world_agent.world_state.recent_events_summary), self.world_agent.recent_events_history_limit)
         
         # Test with exception
-        self.llm_interface.generate_response.reset_mock()
-        self.llm_interface.generate_response.side_effect = Exception("LLM error")
+        self.llm_interface.generate_response_sync.reset_mock()
+        self.llm_interface.generate_response_sync.side_effect = Exception("LLM error")
         
         self.world_agent.update_from_outcome("A third event occurs.")
         
@@ -456,8 +502,105 @@ class TestWorldAgent(unittest.TestCase):
         self.assertLessEqual(len(self.world_agent.world_state.recent_events_summary), self.world_agent.recent_events_history_limit)
         
         # Reset side effect
-        self.llm_interface.generate_response.side_effect = None
+        self.llm_interface.generate_response_sync.side_effect = None
     
+    def test_apply_plan_updates_relationships(self):
+        # Mock RelationshipManager
+        mock_relationship_manager = MagicMock(spec=RelationshipManager)
+        
+        # Initial character states (simplified for this test)
+        initial_character_states = {
+            "Alice": CharacterState(name="Alice", persona="Kind", goals=[], current_mood=MoodVector(), activity_coefficient=1.0, location="garden", conditions=[], inventory={}),
+            "Bob": CharacterState(name="Bob", persona="Grumpy", goals=[], current_mood=MoodVector(), activity_coefficient=1.0, location="garden", conditions=[], inventory={})
+        }
+        
+        # Re-initialize WorldAgent with the mock RelationshipManager and proper character_states
+        world_agent_for_rel_test = WorldAgent(
+            world_definition=self.world_definition,
+            llm_interface=self.llm_interface,
+            character_states=initial_character_states, # Using correct V1 structure
+            relationship_manager=mock_relationship_manager,
+            max_scene_turns=5 # Keep scene short for test
+        )
+        world_agent_for_rel_test.world_state.character_states = initial_character_states # Ensure it uses our states
+        world_agent_for_rel_test.world_state.active_characters = ["Alice", "Bob"]
+
+        # Scenario 1: Positive interaction - Alice helps Bob
+        plan_helps = {
+            "action": "interact_character",
+            "details": {"target_char_id": "Bob", "interaction_type": "help"},
+            "tone_of_action": "helpful"
+        }
+        # Mock LLM response for apply_plan's outcome generation
+        self.llm_interface.generate_response_sync.return_value = 'Alice helps Bob lift the heavy stone.'
+        
+        world_agent_for_rel_test.apply_plan("Alice", plan_helps)
+        
+        # Assert that adjust_state was called on the relationship_manager
+        # Check for calls related to Alice -> Bob and Bob -> Alice
+        # Based on _interpret_outcome_for_relationship_update, we expect two calls for "helps"
+        self.assertEqual(mock_relationship_manager.adjust_state.call_count, 2)
+        
+        # Check the arguments of the calls (can be tricky if order is not guaranteed)
+        # We expect trust_delta > 0 and affinity_delta > 0 for "helps"
+        # Call for Alice's view of Bob
+        mock_relationship_manager.adjust_state.assert_any_call(
+            char_a_id="Alice", 
+            char_b_id="Bob", 
+            trust_delta=0.05, 
+            affinity_delta=0.02,
+            new_status=None
+        )
+        # Call for Bob's view of Alice (potentially with different deltas if logic was more complex)
+        mock_relationship_manager.adjust_state.assert_any_call(
+            char_a_id="Bob", 
+            char_b_id="Alice", 
+            trust_delta=0.05 * 0.8, # As per current placeholder logic
+            affinity_delta=0.02 * 0.8,
+            new_status=None
+        )
+        mock_relationship_manager.adjust_state.reset_mock() # Reset for next scenario
+
+        # Scenario 2: Negative interaction - Alice insults Bob
+        plan_insults = {
+            "action": "speak",
+            "details": {"text": "You are useless!", "target_char_id": "Bob"},
+            "tone_of_action": "angry"
+        }
+        self.llm_interface.generate_response_sync.return_value = 'Alice insults Bob, calling him useless.'
+        
+        world_agent_for_rel_test.apply_plan("Alice", plan_insults)
+        
+        self.assertEqual(mock_relationship_manager.adjust_state.call_count, 2)
+        # We expect trust_delta < 0 and affinity_delta < 0 for "insults"
+        mock_relationship_manager.adjust_state.assert_any_call(
+            char_a_id="Alice", 
+            char_b_id="Bob", 
+            trust_delta=-0.1, 
+            affinity_delta=-0.05,
+            new_status=None
+        )
+        mock_relationship_manager.adjust_state.assert_any_call(
+            char_a_id="Bob", 
+            char_b_id="Alice", 
+            trust_delta=-0.1 * 0.8, 
+            affinity_delta=-0.05 * 0.8,
+            new_status=None
+        )
+        mock_relationship_manager.adjust_state.reset_mock()
+
+        # Scenario 3: Neutral interaction (or one not picked up by simple keywords)
+        plan_neutral = {
+            "action": "speak",
+            "details": {"text": "The weather is fine.", "target_char_id": "Bob"},
+            "tone_of_action": "neutral"
+        }
+        self.llm_interface.generate_response_sync.return_value = 'Alice comments on the weather to Bob.'
+        world_agent_for_rel_test.apply_plan("Alice", plan_neutral)
+        # Based on current _interpret_outcome_for_relationship_update, this should result in 0 calls
+        # because no keywords like "helps" or "insults" are present.
+        self.assertEqual(mock_relationship_manager.adjust_state.call_count, 0)
+
     def test_apply_plan_llm(self):
         """Test applying action plans using LLM for outcome generation"""
         # Test speak action (keep this part as it also affects world_state turn_number etc.)
@@ -466,19 +609,20 @@ class TestWorldAgent(unittest.TestCase):
             "details": {"text": "Hello, world!"},
             "tone_of_action": "friendly"
         }
-        self.llm_interface.generate_response.return_value = 'Knight says: "Hello, world!" with a friendly smile.'
+        self.llm_interface.generate_response_sync.return_value = 'Knight says: "Hello, world!" with a friendly smile.'
         outcome_speak = self.world_agent.apply_plan("Knight", speak_plan)
-        self.llm_interface.generate_response.assert_called_once()
-        args, kwargs = self.llm_interface.generate_response.call_args
+        self.llm_interface.generate_response_sync.assert_called_once()
+        args, kwargs = self.llm_interface.generate_response_sync.call_args
         self.assertIn("World Agent", kwargs.get("system_prompt", ""))
         self.assertIn("Knight", kwargs.get("user_prompt", ""))
         self.assertIn("Hello, world!", kwargs.get("user_prompt", ""))
         self.assertEqual(outcome_speak, 'Knight says: "Hello, world!" with a friendly smile.')
         self.assertEqual(self.world_agent.world_state.turn_number, 1)
+        self.world_agent.update_from_outcome(outcome_speak)
         self.assertIn(outcome_speak, self.world_agent.world_state.recent_events_summary)
         
         # Test move action for Scholar
-        self.llm_interface.generate_response.reset_mock()
+        self.llm_interface.generate_response_sync.reset_mock()
         move_plan = {
             "action": "move",
             "details": {"target_location": "old_ruins"},
@@ -486,7 +630,7 @@ class TestWorldAgent(unittest.TestCase):
         }
         
         expected_outcome_text = "Scholar moves to the old ruins, carefully watching each step."
-        self.llm_interface.generate_response.return_value = expected_outcome_text
+        self.llm_interface.generate_response_sync.return_value = expected_outcome_text
         
         scholar_state_obj_at_start = self.world_agent.world_state.character_states["Scholar"]
         initial_scholar_location = scholar_state_obj_at_start.location
@@ -508,9 +652,9 @@ class TestWorldAgent(unittest.TestCase):
         scholar_state_obj_after_apply_plan.location = "town_square" 
         print(f"TEST DEBUG (test_apply_plan_llm): AFTER manual reset - Scholar State ID: {id(scholar_state_obj_after_apply_plan)}, Location: {scholar_state_obj_after_apply_plan.location}")
 
-        self.llm_interface.generate_response.reset_mock() 
+        self.llm_interface.generate_response_sync.reset_mock() 
         changes_json_for_move = '{"location_changes": {"Scholar": "old_ruins"}}' 
-        self.llm_interface.generate_response.return_value = changes_json_for_move
+        self.llm_interface.generate_response_sync.return_value = changes_json_for_move
         
         self.world_agent.update_from_outcome(outcome_move) 
         
@@ -524,8 +668,8 @@ class TestWorldAgent(unittest.TestCase):
         self.assertEqual(location_value_at_assertion_point, "old_ruins", "Location not updated as expected by update_from_outcome")
         
         # Test exception handling with LLM failure in apply_plan
-        self.llm_interface.generate_response.reset_mock()
-        self.llm_interface.generate_response.side_effect = Exception("LLM API error")
+        self.llm_interface.generate_response_sync.reset_mock()
+        self.llm_interface.generate_response_sync.side_effect = Exception("LLM API error")
         action_plan = {
             "action": "jump",
             "details": {"height": "very high"},
@@ -533,8 +677,9 @@ class TestWorldAgent(unittest.TestCase):
         }
         outcome_fallback = self.world_agent.apply_plan("Knight", action_plan)
         self.assertEqual(outcome_fallback, "Knight attempts to jump.")
+        self.world_agent.update_from_outcome(outcome_fallback)
         self.assertIn(outcome_fallback, self.world_agent.world_state.recent_events_summary)
-        self.llm_interface.generate_response.side_effect = None
+        self.llm_interface.generate_response_sync.side_effect = None
 
 
 if __name__ == '__main__':

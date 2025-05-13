@@ -17,6 +17,7 @@ from modules.memory_manager import MemoryManager
 from modules.character_agent import CharacterAgent
 from modules.world_agent import WorldAgent
 from modules.narrator import Narrator
+from modules.relationship_manager import RelationshipManager
 from modules.models import CharacterState # Assuming CharacterState is needed by WorldAgent or for init
 import logging # For debug logging
 
@@ -86,6 +87,10 @@ def main():
         logger.info("Initializing MemoryManager...")
         memory_manager = MemoryManager() # Using default in-memory for now
         
+        # Initialize Relationship Manager
+        logger.info("Initializing RelationshipManager...")
+        relationship_manager = RelationshipManager()
+        
         # Initialize Character Agents
         logger.info("Initializing Character Agents...")
         character_agents = {}
@@ -116,6 +121,7 @@ def main():
                 role_archetype=role_archetype,
                 llm_interface=llm_interface,
                 memory_manager=memory_manager
+                # relationship_manager=relationship_manager, # This line should be removed
                 # initial_world_state will be passed per turn by WorldAgent/loop
             )
             logger.info(f"Initialized CharacterAgent: {char_name}")
@@ -126,6 +132,7 @@ def main():
             world_definition=config["world"],
             llm_interface=llm_interface, # If WA uses LLM for its decisions
             character_states=initial_character_states, # Corrected parameter name
+            relationship_manager=relationship_manager, # Added relationship_manager
             # TODO: Add configurable thresholds for WA from preset if available
             # max_scene_turns=config["preset"].get("max_scene_turns", 20), # Example
             # stagnation_threshold=config["preset"].get("stagnation_threshold", 3), # Example
@@ -174,6 +181,11 @@ def main():
                 current_world_view = world_agent.get_world_state_view_for_actor(actor_name)
                 actor_current_mood = world_agent.get_character_mood(actor_name)
 
+                # Get V1 contexts
+                logger.debug(f"Fetching relationship context for {actor_name}...")
+                relationship_context = relationship_manager.get_context_for(actor_name)
+                logger.debug(f"Fetching recent scene summaries...")
+                scene_summary_context = memory_manager.get_recent_scene_summaries() # Default count (3)
 
                 # Retrieve relevant memories
                 # The query for memory retrieval might need to be more dynamic
@@ -188,7 +200,9 @@ def main():
                 logger.debug(f"Actor {actor_name} reflecting...")
                 reflection_output = actor_agent.reflect_sync(
                     world_state=current_world_view, # Changed from world_state_summary
-                    relevant_memories=relevant_memories
+                    relevant_memories=relevant_memories,
+                    relationship_context=relationship_context, # Added V1 context
+                    scene_summary_context=scene_summary_context # Added V1 context
                 )
                 # Update mood in WorldAgent's state
                 world_agent.update_character_mood(actor_name, reflection_output.updated_mood)
@@ -199,7 +213,9 @@ def main():
                 plan_json = actor_agent.plan_sync(
                     world_state=current_world_view,
                     relevant_memories=relevant_memories,
-                    internal_thought_summary=reflection_output.internal_thought
+                    internal_thought_summary=reflection_output.internal_thought,
+                    relationship_context=relationship_context, # Added V1 context
+                    scene_summary_context=scene_summary_context # Added V1 context
                 )
                 logger.info(f"Actor {actor_name} planned: {plan_json.action} - {plan_json.details}")
                 
