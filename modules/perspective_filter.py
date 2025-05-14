@@ -64,7 +64,7 @@ class PerspectiveFilter:
         # Fetch character context (persona, goals, memories, mood, relationships)
         # Persona & Goals are directly in char_state from CharacterConfig via main.py
         persona_str = char_state.persona
-        goals_str = f"Long-term: {char_state.goals}, Short-term: (Refer to CharacterConfig if more detailed structure is needed here or pass it in)"
+        goals_str = f"Goals: {char_state.goals}" # Simplified from previous version
         current_mood_str = str(char_state.current_mood)
         
         # Memory retrieval (placeholder - a real implementation would fetch relevant memories)
@@ -77,6 +77,25 @@ class PerspectiveFilter:
         # relationship_context_str = self.relationship_manager.get_context_for_perception(character_id, ground_truth_world_state)
         relationship_context_str = "(Relationship context not yet implemented for subjective view context)"
 
+        # Current Location Details
+        current_location_details_str = "(Character's current location details not found)"
+        location_object_details_list = []
+        if char_state.location and char_state.location in ground_truth_world_state.location_states:
+            current_location_state = ground_truth_world_state.location_states[char_state.location]
+            current_location_details_str = f"You are in '{current_location_state.name}' ({current_location_state.id}). Description: {current_location_state.description}."
+            
+            if current_location_state.objects_present:
+                location_object_details_list.append("  Visible Objects in Location:")
+                for obj_id in current_location_state.objects_present:
+                    if obj_id in ground_truth_world_state.object_states:
+                        obj_state = ground_truth_world_state.object_states[obj_id]
+                        location_object_details_list.append(f"    - {obj_state.name} ({obj_id}): {obj_state.description} Current state: {obj_state.state}. Interactive: {obj_state.is_interactive}.")
+                    else:
+                        location_object_details_list.append(f"    - Object ID: {obj_id} (Details not found in object_states)")
+            else:
+                location_object_details_list.append("  No specific objects listed in this location.")
+        location_object_details_str = "\n".join(location_object_details_list)
+
         # Prepare details of all characters for the LLM to filter from
         all_character_details_list = []
         for cid, cstate in ground_truth_world_state.character_states.items():
@@ -88,7 +107,7 @@ class PerspectiveFilter:
         # Object states (if available and structured in ground_truth_world_state)
         # For now, assuming object states are part of environment_description or handled by LLM implicitly.
         # object_details_str = self._format_object_states_for_prompt(ground_truth_world_state.object_states)
-        object_details_str = "(Detailed object states not explicitly provided in this view generation step)"
+        # object_details_str = "(Detailed object states not explicitly provided in this view generation step)" # Replaced by location_object_details_str
         
         recent_objective_events_str = "\n".join([f"  - {event}" for event in ground_truth_world_state.recent_events_summary[-5:]])
 
@@ -138,11 +157,14 @@ class PerspectiveFilter:
 - Environment Description (general): {ground_truth_world_state.environment_description}
 - Character '{character_id}' is at Location ID: {char_state.location}
 
+- Current Location Details:
+{current_location_details_str}
+
+- Objective Details of Objects in Current Location:
+{location_object_details_str}
+
 - All Characters in the World (for visibility assessment):
 {all_character_details_str}
-
-- Objective Object States (if relevant and available):
-{object_details_str}
 
 - Recent Objective Events (last 5 for general awareness):
 {recent_objective_events_str}
@@ -152,7 +174,9 @@ Based *only* on what '{character_id}' would realistically perceive, know, and in
 
 Consider:
 - **Location Perception:** How would they describe their current location ({char_state.location}) based on their senses?
+  The objective details are: {current_location_details_str}
 - **Visibility:** Which other characters and key objects would they be aware of? They can only perceive things in their current location unless there's a strong sensory reason otherwise (e.g., a loud explosion elsewhere).
+  Objects objectively in the location: {location_object_details_str}
 - **Character Perception:** For visible characters, what conditions, mood, or actions would '{character_id}' likely perceive or infer?
 - **Object Perception:** For visible objects, what state or usability would they notice?
 - **Event Perception:** How would recent objective events be filtered or interpreted from their POV? (For `recent_perceived_events`, you might simplify this for now, or describe 1-2 key recent events as perceived by '{character_id}').

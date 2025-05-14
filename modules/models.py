@@ -5,6 +5,9 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union, Any
 from datetime import datetime
 
+# Import LocationState and ObjectState from data_models
+from .data_models import LocationState, ObjectState
+
 
 @dataclass
 class MoodVector:
@@ -179,6 +182,8 @@ class WorldState:
     environment_description: str
     active_characters: List[str]
     character_states: Dict[str, CharacterState]
+    location_states: Dict[str, LocationState] = field(default_factory=dict)
+    object_states: Dict[str, ObjectState] = field(default_factory=dict)
     recent_events_summary: List[str] = field(default_factory=list)
 
 

@@ -11,7 +11,7 @@ import logging
 from .models import MoodVector, WorldState, ReflectionOutput, CharacterPlanOutput
 from .data_models import CharacterConfig, InitialGoals
 from .llm_interface import LLMInterface
-from .memory import MemoryManager
+from .memory_manager import MemoryManager
 
 
 class CharacterAgent:
